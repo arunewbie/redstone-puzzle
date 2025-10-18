@@ -91,6 +91,53 @@ async function getTop(limit = 10) {
 
   if (!rows.length) return [];
 
+
+  async function saveScore(username, ms, moves){
+  try{
+    const res = await fetch('/api/leaderboard', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name: username||'Anon', time: ms, moves })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({ message: 'submit failed' }));
+      alert('⚠️ ' + err.message);
+    }
+  }catch(e){
+    // fallback simpan lokal
+    let board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
+    board.push({ name: username||'Anon', time: ms, moves });
+    board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves));
+    board = board.slice(0, 10);
+    localStorage.setItem('ps_leaderboard', JSON.stringify(board));
+  }
+  renderLeaderboard();
+}
+
+  async function renderLeaderboard(){
+  const el = document.getElementById('leaderboard');
+  el.innerHTML = '';
+  try {
+    const res = await fetch('/api/leaderboard');
+    const data = await res.json();
+    data.forEach((e,i)=>{
+      const row = document.createElement('div');
+      row.className = 'leader';
+      row.innerHTML = `<span>${i===0?'👑 ':''}${i+1}. ${e.name}</span><span>${fmt(e.time)} • ${e.moves} mv</span>`;
+      el.appendChild(row);
+    });
+  } catch {
+    const data = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
+    data.forEach((e,i)=>{
+      const row = document.createElement('div');
+      row.className = 'leader';
+      row.innerHTML = `<span>${i+1}. ${e.name}</span><span>${fmt(e.time)} • ${e.moves} mv</span>`;
+      el.appendChild(row);
+    });
+  }
+}
+
+
   // pipeline (HGETALL) to retrieve moves
   const pipe = rows.map(row => (['HGETALL', USER_HASH_PREFIX + row.name]));
   const resp = await fetch(`${UPSTASH_URL}/pipeline`, {
