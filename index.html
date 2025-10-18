@@ -8,9 +8,12 @@
 <style>
   :root{--primary:#ff1e00;--bg:#0b0b0f;--muted:#9aa0a6;--card:#13141a}
   *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;background:url('/images/redstone-bg.png') center/cover fixed no-repeat;}
+  body{
+    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
+    background:url('/images/redstone-bg.png') center/cover fixed no-repeat;
+  }
   body::before{content:'';position:fixed;inset:0;backdrop-filter:blur(8px);background:rgba(0,0,0,.45)}
-  header{text-align:center;padding:22px 16px 6px;position:relative;z-index:1}
+  header{position:relative;z-index:1;text-align:center;padding:22px 16px 6px}
   h1{color:#fff;margin:0;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;text-shadow:0 0 10px rgba(255,255,255,.25)}
   .title-logo{height:40px}
   .sub{color:var(--muted);font-size:14px}
@@ -18,107 +21,472 @@
   @media (max-width:960px){.wrap{grid-template-columns:1fr}}
   .card{background:var(--card);border:1px solid #1e2027;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
   .game{padding:16px}
-  .board{display:flex;justify-content:center;align-items:center;padding:8px}
-  canvas{width:100%;max-width:560px;aspect-ratio:1/1;height:auto;background:#0b0c12;border:1px solid #242633;border-radius:14px;display:block}
+  .board{position:relative;display:flex;justify-content:center;align-items:center;padding:8px}
+  canvas#board{width:100%;max-width:560px;aspect-ratio:1/1;height:auto;background:#0b0c12;border:1px solid #242633;border-radius:14px;display:block}
+  canvas#fx{position:absolute;inset:8px;max-width:560px;aspect-ratio:1/1;border-radius:14px;pointer-events:none}
   .side{padding:16px;display:grid;gap:12px}
   .panel{background:#0f1117;border:1px solid #1f232d;border-radius:14px;padding:14px}
   .panel h3{margin:0 0 8px;color:#e8eaee;font-size:15px}
   .row{display:flex;gap:8px;flex-wrap:wrap}
-  select,button,input{border-radius:12px;border:1px solid #2a2f3a;background:#1d212b;color:#fff;padding:10px 12px}
+  input,select,button{border-radius:12px;border:1px solid #2a2f3a;background:#1d212b;color:#fff;padding:10px 12px}
   button{background:var(--primary);border:none;font-weight:700;cursor:pointer}
   button.secondary{background:#1d212b;border:1px solid #2a2f3a}
+  button:disabled{opacity:.5;cursor:not-allowed}
   .badges{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
   .badge{background:#191b22;border:1px solid #252830;color:#d5d7dc;font-size:13px;border-radius:999px;padding:6px 10px}
   .ok{color:#66ef9a}
   .muted{color:#9aa0a6}
   .footer{color:#9aa0a6;text-align:center;padding:16px;position:relative;z-index:1}
+  /* leaderboard */
+  .list{display:grid;gap:6px;max-height:220px;overflow:auto}
+  .leader{display:flex;justify-content:space-between;border-bottom:1px solid #21242c;padding:6px 0;font-size:14px;color:#d5dae0}
+  .crown{margin-right:6px}
+  /* win glow */
+  .win-glow{animation:winGlow 1200ms ease-out 1}
+  @keyframes winGlow{
+    0%{box-shadow:0 0 0 rgba(255,255,255,0)}
+    30%{box-shadow:0 0 40px rgba(255,255,255,.35)}
+    100%{box-shadow:0 0 0 rgba(255,255,255,0)}
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1><img class="title-logo" src="/images/logo-redstone.svg" alt=""><span>RedStone Puzzle</span></h1>
-  <div class="sub">Drag the tiles to complete the image. Click/tap on the tiles next to the empty space.</div>
-</header>
-<main class="wrap">
-  <section class="card game">
-    <div class="board">
-      <canvas id="board" width="560" height="560"></canvas>
-    </div>
-    <div class="badges">
-      <div class="badge">Moves: <b id="moves">0</b></div>
-      <div class="badge">Time: <b id="time">00:00</b></div>
-      <div class="badge">Grid: <b id="gridLabel">4×4</b></div>
-      <div class="badge">Status: <b id="status" class="muted">Playing…</b></div>
-    </div>
-  </section>
-  <aside class="card side">
-    <div class="panel">
-      <h3>Image</h3>
-      <div class="row">
-        <select id="imageSelect">
-          <option value="redstone1.png">RedStone1</option>
-          <option value="redstone2.png">RedStone2</option>
-          <option value="redstone3.png">RedStone3</option>
-          <option value="redstone4.png">RedStone4</option>
-          <option value="redstone5.png">RedStone5</option>
-          <option value="redstone6.png">RedStone6</option>
-          <option value="redstone7.png">RedStone7</option>
-          <option value="atom.png">RedStone atom</option>
-          <option value="redstonelogo.png">RedStone logo</option>
-          <option value="stoney.png">Stoney</option>
-        
-        </select>
-        <button id="reload" class="secondary">Load</button>
+  <header>
+    <h1><img class="title-logo" src="/images/logo-redstone.svg" alt=""><span>Puzzle Slide</span></h1>
+    <div class="sub">Slide tiles to reassemble the image. Click/tap an adjacent tile or use arrow keys.</div>
+  </header>
+
+  <main class="wrap">
+    <section class="card game">
+      <div class="board" id="boardWrap">
+        <canvas id="board" width="560" height="560"></canvas>
+        <canvas id="fx" width="560" height="560"></canvas>
       </div>
-    </div>
-    <div class="panel">
-      <h3>Grid</h3>
-      <div class="row">
-        <select id="grid">
-          <option value="3">3 × 3 (easy)</option>
-          <option value="4" selected>4 × 4 (classic)</option>
-          <option value="5">5 × 5 (hard)</option>
-        </select>
-        <button id="shuffle">Shuffle</button>
+      <div class="badges">
+        <div class="badge">Player: <b id="playerLabel">—</b></div>
+        <div class="badge">Moves: <b id="moves">0</b></div>
+        <div class="badge">Time: <b id="time">00:00</b></div>
+        <div class="badge">Grid: <b id="gridLabel">4×4</b></div>
+        <div class="badge">Status: <b id="status" class="muted">Ready</b></div>
       </div>
-    </div>
-    <div class="panel">
-      <h3>Controls</h3>
-      <div class="row">
-        <button id="newGame">New Game</button>
-        <button id="solve" class="secondary">Preview</button>
+    </section>
+
+    <aside class="card side">
+      <div class="panel">
+        <h3>Player</h3>
+        <div class="row">
+          <input id="username" placeholder="Your username..." />
+          <button id="saveName" class="secondary">Set</button>
+        </div>
       </div>
-    </div>
-  </aside>
-</main>
-<div class="footer">© RedStone Puzzle Game by arunewbie</div>
+
+      <div class="panel">
+        <h3>Image</h3>
+        <div class="row">
+          <select id="imageSelect">
+            <!-- ganti sesuai aset kamu -->
+            <option value="alex1.png">alex1.png</option>
+            <option value="alex2.png">alex2.png</option>
+            <option value="morgana.png">morgana.png</option>
+            <option value="redstone.png">redstone.png</option>
+          </select>
+          <button id="reload" class="secondary">Load</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Grid</h3>
+        <div class="row">
+          <select id="grid">
+            <option value="3">3 × 3 (easy)</option>
+            <option value="4" selected>4 × 4 (classic)</option>
+            <option value="5">5 × 5 (hard)</option>
+          </select>
+          <button id="shuffle">Shuffle</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Controls</h3>
+        <div class="row">
+          <button id="newGame">New Game</button>
+          <button id="shareX" class="secondary">Share on X</button>
+        </div>
+        <div class="muted" style="font-size:13px;margin-top:6px">Share akan membuka composer X dengan teks + social-card.</div>
+      </div>
+
+      <div class="panel">
+        <h3>🏆 Leaderboard (Best Time)</h3>
+        <div id="leaderboard" class="list"></div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="footer">© Puzzle Slide • Images in <code>/images/</code></div>
+
 <script>
-// puzzle script
-const canvas=document.getElementById('board'),ctx=canvas.getContext('2d');
-const movesEl=document.getElementById('moves'),timeEl=document.getElementById('time'),gridLabel=document.getElementById('gridLabel'),statusEl=document.getElementById('status');
-const imgSel=document.getElementById('imageSelect'),reloadBtn=document.getElementById('reload'),gridSel=document.getElementById('grid'),shuffleBtn=document.getElementById('shuffle'),newBtn=document.getElementById('newGame'),solveBtn=document.getElementById('solve');
-const IMAGE_BASE='/images/';
-let img=null;const st={n:4,tiles:[],moves:0,empty:0,timer:null,start:0};
-function fmt(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),ss=s%60;return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0')}
-function startTimer(){stopTimer();st.start=Date.now();st.timer=setInterval(()=>timeEl.textContent=fmt(Date.now()-st.start),250)}
-function stopTimer(){if(st.timer){clearInterval(st.timer);st.timer=null}}
-function shuffleSolvable(steps=200){const n=st.n,N=n*n;st.tiles=Array.from({length:N},(_,i)=>i);st.empty=N-1;let last=-1;for(let k=0;k<steps;k++){const e=st.empty,r=Math.floor(e/n),c=e%n;const opt=[];if(r>0)opt.push(e-n);if(r<n-1)opt.push(e+n);if(c>0)opt.push(e-1);if(c<n-1)opt.push(e+1);const filtered=opt.filter(x=>x!==last);const next=(filtered.length?filtered:opt)[Math.floor(Math.random()*(filtered.length?filtered.length:opt.length))];swap(e,next);last=e;st.empty=next}st.moves=0;movesEl.textContent='0';statusEl.textContent='Playing…';statusEl.classList.remove('ok')}
-function swap(a,b){const t=st.tiles[a];st.tiles[a]=st.tiles[b];st.tiles[b]=t}
-function isSolved(){return st.tiles.every((v,i)=>v===i)}
-function loadImage(n){return new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=IMAGE_BASE+n+'?v='+Date.now()})}
-function draw(){const n=st.n,N=n*n,tW=canvas.width/n,tH=canvas.height/n;ctx.clearRect(0,0,canvas.width,canvas.height);for(let i=0;i<N;i++){const val=st.tiles[i];const r=Math.floor(i/n),c=i%n;if(val===N-1){ctx.fillStyle='#0b0c12';ctx.fillRect(c*tW,r*tH,tW,tH);continue}const sR=Math.floor(val/n),sC=val%n;ctx.drawImage(img,sC*(img.width/n),sR*(img.height/n),img.width/n,img.height/n,c*tW,r*tH,tW,tH);ctx.strokeStyle='rgba(255,255,255,.075)';ctx.strokeRect(c*tW+0.5,r*tH+0.5,tW-1,tH-1)}}
-function posToIdx(x,y){const n=st.n,rect=canvas.getBoundingClientRect(),cx=(x-rect.left)*(canvas.width/rect.width),cy=(y-rect.top)*(canvas.height/rect.height),col=Math.floor(cx/(canvas.width/n)),row=Math.floor(cy/(canvas.height/n));return col<0||row<0||col>=n||row>=n?-1:row*n+col}
-function canMove(i){const n=st.n,e=st.empty;const sr=Math.floor(i/n),sc=i%n,er=Math.floor(e/n),ec=e%n;return Math.abs(sr-er)+Math.abs(sc-ec)===1}
-function move(i){if(canMove(i)){swap(i,st.empty);st.empty=i;st.moves++;movesEl.textContent=st.moves;draw();if(isSolved()){stopTimer();statusEl.textContent='Solved!';statusEl.classList.add('ok')}}}
-canvas.addEventListener('click',e=>{const i=posToIdx(e.clientX,e.clientY);if(i>=0)move(i)});
-canvas.addEventListener('touchend',e=>{const t=e.changedTouches[0],i=posToIdx(t.clientX,t.clientY);if(i>=0)move(i)},{passive:true});
-window.addEventListener('keydown',e=>{const n=st.n,eIdx=st.empty;let t=-1;const r=Math.floor(eIdx/n),c=eIdx%n;if(e.key==='ArrowUp'&&r<n-1)t=eIdx+n;if(e.key==='ArrowDown'&&r>0)t=eIdx-n;if(e.key==='ArrowLeft'&&c<n-1)t=eIdx+1;if(e.key==='ArrowRight'&&c>0)t=eIdx-1;if(t>=0)move(t)});
-gridSel.addEventListener('change',()=>{st.n=parseInt(gridSel.value,10);gridLabel.textContent=`${st.n}×${st.n}`;if(img){shuffleSolvable();draw();startTimer()}});
-reloadBtn.addEventListener('click',async()=>{img=await loadImage(imgSel.value);if(!img)return;shuffleSolvable();draw();startTimer()});
-shuffleBtn.addEventListener('click',()=>{if(img){shuffleSolvable();draw();startTimer()}});
-newBtn.addEventListener('click',async()=>{if(!img){img=await loadImage(imgSel.value);if(!img)return;}shuffleSolvable();draw();startTimer()});
-solveBtn.addEventListener('click',()=>{if(!img)return;const n=st.n,N=n*n;st.tiles=Array.from({length:N},(_,i)=>i);st.empty=N-1;draw();stopTimer();statusEl.textContent='Preview';statusEl.classList.add('ok')});
-(async()=>{img=await loadImage(imgSel.value);if(img){shuffleSolvable();draw();startTimer()}})();
+/* ====== Core Sliding Puzzle with username + timer + leaderboard + share + win FX ====== */
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const fx = document.getElementById('fx');
+const fxctx = fx.getContext('2d');
+const wrap = document.getElementById('boardWrap');
+
+const movesEl = document.getElementById('moves');
+const timeEl  = document.getElementById('time');
+const gridLabel = document.getElementById('gridLabel');
+const statusEl = document.getElementById('status');
+const playerLabel = document.getElementById('playerLabel');
+
+const usernameInput = document.getElementById('username');
+const saveNameBtn   = document.getElementById('saveName');
+
+const imageSelect = document.getElementById('imageSelect');
+const reloadBtn   = document.getElementById('reload');
+const gridSelect  = document.getElementById('grid');
+const shuffleBtn  = document.getElementById('shuffle');
+const newBtn      = document.getElementById('newGame');
+const shareBtn    = document.getElementById('shareX');
+
+const IMAGE_BASE = '/images/';
+let img = null;
+
+const st = {
+  n: 4,
+  tiles: [],
+  moves: 0,
+  empty: 0,
+  timer: null,
+  startedAt: 0,
+  username: localStorage.getItem('ps_username') || '',
+};
+
+playerLabel.textContent = st.username || '—';
+if (st.username) usernameInput.value = st.username;
+
+function fmt(ms){
+  const s = Math.floor(ms/1000), m = Math.floor(s/60), ss = s % 60;
+  return String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+}
+function startTimer(){ stopTimer(); st.startedAt = Date.now(); st.timer = setInterval(()=>{ timeEl.textContent = fmt(Date.now() - st.startedAt); }, 250); }
+function stopTimer(){ if(st.timer){ clearInterval(st.timer); st.timer=null; } }
+
+function shuffleSolvable(steps=200){
+  const n = st.n, N = n*n;
+  st.tiles = Array.from({length:N}, (_,i)=>i);
+  st.empty = N-1;
+  let last = -1;
+  for (let k=0;k<steps;k++){
+    const e = st.empty, r = Math.floor(e/n), c = e % n;
+    const opt = [];
+    if (r>0) opt.push(e-n);
+    if (r<n-1) opt.push(e+n);
+    if (c>0) opt.push(e-1);
+    if (c<n-1) opt.push(e+1);
+    const filtered = opt.filter(x=>x!==last);
+    const pool = filtered.length ? filtered : opt;
+    const next = pool[Math.floor(Math.random()*pool.length)];
+    swap(e,next);
+    last = e;
+    st.empty = next;
+  }
+  st.moves = 0;
+  movesEl.textContent = '0';
+  timeEl.textContent = '00:00';
+  statusEl.textContent = 'Playing…';
+  statusEl.classList.remove('ok');
+}
+
+function swap(a,b){ const t = st.tiles[a]; st.tiles[a]=st.tiles[b]; st.tiles[b]=t; }
+function isSolved(){ return st.tiles.every((v,i)=>v===i); }
+
+function loadImage(name){
+  return new Promise((resolve)=>{
+    const image = new Image();
+    image.onload = ()=>resolve(image);
+    image.onerror = ()=>resolve(null);
+    image.src = IMAGE_BASE + name + `?v=${Date.now()}`;
+  });
+}
+
+function draw(){
+  const n = st.n, N = n*n, tW = canvas.width/n, tH = canvas.height/n;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for (let i=0;i<N;i++){
+    const val = st.tiles[i];
+    const r = Math.floor(i/n), c = i % n;
+    if (val === N-1){
+      ctx.fillStyle='#0b0c12';
+      ctx.fillRect(c*tW, r*tH, tW, tH);
+      continue;
+    }
+    const sR = Math.floor(val/n), sC = val % n;
+    ctx.drawImage(img, sC*(img.width/n), sR*(img.height/n), img.width/n, img.height/n, c*tW, r*tH, tW, tH);
+    ctx.strokeStyle='rgba(255,255,255,.075)';
+    ctx.strokeRect(c*tW+0.5, r*tH+0.5, tW-1, tH-1);
+  }
+}
+
+function posToIdx(x,y){
+  const n = st.n;
+  const rect = canvas.getBoundingClientRect();
+  const cx = (x-rect.left)*(canvas.width/rect.width);
+  const cy = (y-rect.top)*(canvas.height/rect.height);
+  const col = Math.floor(cx/(canvas.width/n));
+  const row = Math.floor(cy/(canvas.height/n));
+  return (col<0||row<0||col>=n||row>=n) ? -1 : row*n + col;
+}
+
+function canMove(i){
+  const n = st.n, e = st.empty;
+  const sr = Math.floor(i/n), sc = i%n, er = Math.floor(e/n), ec = e % n;
+  return Math.abs(sr-er) + Math.abs(sc-ec) === 1;
+}
+
+function move(i){
+  if (canMove(i)){
+    swap(i, st.empty);
+    st.empty = i;
+    st.moves++;
+    movesEl.textContent = st.moves;
+    draw();
+    if (isSolved()){
+      onWin();
+    }
+  }
+}
+
+/* ===== Leaderboard (local) ===== */
+function saveScore(username, ms, moves){
+  let board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
+  board.push({ name: username || 'Anon', time: ms, moves, date: Date.now() });
+  // sort by best time asc, then moves asc
+  board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves) );
+  board = board.slice(0, 10);
+  localStorage.setItem('ps_leaderboard', JSON.stringify(board));
+  renderLeaderboard();
+}
+function renderLeaderboard(){
+  const el = document.getElementById('leaderboard');
+  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
+  el.innerHTML = '';
+  board.forEach((e,i)=>{
+    const row = document.createElement('div');
+    row.className = 'leader';
+    const left = document.createElement('span');
+    left.innerHTML = `${i===0?'<span class="crown">👑</span>':''}${i+1}. ${e.name}`;
+    const right = document.createElement('span');
+    right.textContent = `${fmt(e.time)} • ${e.moves} mv`;
+    row.appendChild(left); row.appendChild(right);
+    el.appendChild(row);
+  });
+}
+
+/* ===== Win FX (confetti simple + glow) ===== */
+function confettiBurst(){
+  fxctx.clearRect(0,0,fx.width,fx.height);
+  const particles = [];
+  const N = 120;
+  for (let i=0;i<N;i++){
+    particles.push({
+      x: fx.width/2, y: fx.height/2,
+      vx: (Math.random()*2-1)*4,
+      vy: (Math.random()*2-1)*4 - 2,
+      g: 0.08 + Math.random()*0.06,
+      life: 60 + Math.random()*20,
+      size: 2 + Math.random()*3
+    });
+  }
+  let t=0;
+  function tick(){
+    fxctx.clearRect(0,0,fx.width,fx.height);
+    particles.forEach(p=>{
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life--;
+      fxctx.globalAlpha = Math.max(0, p.life/80);
+      fxctx.fillStyle = ['#ff1e00','#ffd166','#66ef9a','#66a0ff','#ffffff'][Math.floor(Math.random()*5)];
+      fxctx.beginPath(); fxctx.arc(p.x,p.y,p.size,0,Math.PI*2); fxctx.fill();
+    });
+    fxctx.globalAlpha = 1;
+    t++;
+    if (t<90) requestAnimationFrame(tick);
+    else fxctx.clearRect(0,0,fx.width,fx.height);
+  }
+  tick();
+  // glow anim on wrapper
+  wrap.classList.remove('win-glow'); // restart animation
+  void wrap.offsetWidth;
+  wrap.classList.add('win-glow');
+}
+
+/* ===== Share to X (image card + tweet intent) ===== */
+async function createShareCard(username, bestMs, moves){
+  const w=1200, h=630;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const g=c.getContext('2d');
+
+  // bg
+  const grd=g.createLinearGradient(0,0,w,h);
+  grd.addColorStop(0,'#11131a'); grd.addColorStop(1,'#1a0f0f');
+  g.fillStyle=grd; g.fillRect(0,0,w,h);
+
+  // blobs
+  g.globalAlpha=0.22;
+  g.fillStyle='#ff1e00'; g.beginPath(); g.arc(w*0.85,h*0.22,160,0,Math.PI*2); g.fill();
+  g.fillStyle='#ffffff'; g.beginPath(); g.arc(w*0.18,h*0.82,220,0,Math.PI*2); g.fill();
+  g.globalAlpha=1;
+
+  // logo (optional)
+  try{
+    const logo = await loadExtImage('/images/logo-redstone.svg');
+    if (logo){ g.drawImage(logo, w-220, 40, 160, 160* (logo.height/logo.width || 1)); }
+  }catch{}
+
+  // title
+  g.fillStyle='#fff'; g.font='800 64px system-ui';
+  g.fillText('Puzzle Slide', 60, 120);
+
+  // player
+  g.font='600 42px system-ui'; g.fillStyle='#cfd3da';
+  g.fillText('Player', 60, 200);
+  g.fillStyle='#ffffff'; g.font='800 56px system-ui';
+  g.fillText(username || 'Anon', 60, 258);
+
+  // best time + moves
+  g.fillStyle='#cfd3da'; g.font='600 42px system-ui';
+  g.fillText('Best Time', 60, 340);
+  g.fillStyle='#66ef9a'; g.font='800 88px system-ui';
+  g.fillText(fmt(bestMs), 60, 410);
+
+  g.fillStyle='#cfd3da'; g.font='600 42px system-ui';
+  g.fillText('Moves', 60, 490);
+  g.fillStyle='#66a0ff'; g.font='800 88px system-ui';
+  g.fillText(String(moves), 60, 560);
+
+  return new Promise((resolve)=> c.toBlob(b=>resolve(b),'image/png'));
+}
+function loadExtImage(url){
+  return new Promise((resolve)=>{
+    const im=new Image(); im.crossOrigin='anonymous';
+    im.onload=()=>resolve(im); im.onerror=()=>resolve(null);
+    im.src=url + (url.includes('?')?'&':'?') + 'v=' + Date.now();
+  });
+}
+function blobToFile(blob, name){ return new File([blob], name, {type:blob.type}); }
+async function shareOnX(username){
+  // ambil best score user
+  const name = username || 'Anon';
+  const board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
+  const my = board.find(e=>e.name===name) || {time:0, moves:0};
+  const card = await createShareCard(name, my.time||0, my.moves||0);
+
+  // coba Web Share Level 2 (beberapa browser mendukung share file)
+  const shareData = {
+    title: 'Puzzle Slide',
+    text: `I just played Puzzle Slide!\nBest time: ${fmt(my.time||0)} • Moves: ${my.moves||0}\nCan you beat me?`,
+    url: location.origin
+  };
+  try{
+    if (navigator.canShare && card && navigator.canShare({files:[blobToFile(card, 'score.png')]})){
+      shareData.files = [blobToFile(card, 'score.png')];
+      await navigator.share(shareData);
+      return;
+    }
+  }catch{}
+
+  // fallback: buka composer X dengan teks + url (tanpa gambar ter-upload otomatis)
+  const text = `I just played Puzzle Slide! Best time: ${fmt(my.time||0)} • Moves: ${my.moves||0}`;
+  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('Puzzle,Game')}`;
+  window.open(shareUrl,'_blank','noopener,noreferrer');
+}
+
+/* ===== Events ===== */
+saveNameBtn.onclick = ()=>{
+  const v = usernameInput.value.trim();
+  st.username = v || 'Anon';
+  localStorage.setItem('ps_username', st.username);
+  playerLabel.textContent = st.username;
+};
+
+gridSelect.addEventListener('change', ()=>{
+  st.n = parseInt(gridSelect.value,10);
+  gridLabel.textContent = `${st.n}×${st.n}`;
+  if (img){ shuffleSolvable(Math.max(200, st.n*st.n*30)); draw(); startTimer(); }
+});
+
+reloadBtn.addEventListener('click', async ()=>{
+  const loaded = await loadImage(imageSelect.value);
+  if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
+  img = loaded;
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw(); startTimer(); statusEl.textContent='Playing…';
+});
+
+shuffleBtn.addEventListener('click', ()=>{
+  if (!img) return;
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw(); startTimer(); statusEl.textContent='Playing…';
+});
+
+newBtn.addEventListener('click', async ()=>{
+  if (!img){
+    img = await loadImage(imageSelect.value);
+    if (!img){ alert('Image not found: '+imageSelect.value); return; }
+  }
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw(); startTimer(); statusEl.textContent='Playing…';
+});
+
+canvas.addEventListener('click', e=>{
+  if (!img) return;
+  const i = posToIdx(e.clientX, e.clientY);
+  if (i>=0) move(i);
+});
+canvas.addEventListener('touchend', e=>{
+  if (!img) return;
+  const t = e.changedTouches[0];
+  const i = posToIdx(t.clientX, t.clientY);
+  if (i>=0) move(i);
+},{passive:true});
+window.addEventListener('keydown', e=>{
+  if (!img) return;
+  const n = st.n, eIdx = st.empty;
+  let target = -1;
+  const r = Math.floor(eIdx/n), c = eIdx % n;
+  if (e.key==='ArrowUp' && r<n-1)   target = eIdx + n;
+  if (e.key==='ArrowDown' && r>0)   target = eIdx - n;
+  if (e.key==='ArrowLeft' && c<n-1) target = eIdx + 1;
+  if (e.key==='ArrowRight'&& c>0)   target = eIdx - 1;
+  if (target>=0) move(target);
+});
+
+shareBtn.onclick = ()=> shareOnX(st.username || 'Anon');
+
+/* ===== Win handler ===== */
+function onWin(){
+  stopTimer();
+  statusEl.textContent='Solved!';
+  statusEl.classList.add('ok');
+  confettiBurst();
+
+  const elapsed = Date.now() - st.startedAt;
+  const name = st.username || 'Anon';
+  saveScore(name, elapsed, st.moves);
+}
+
+/* ===== Init ===== */
+renderLeaderboard();
+(async function init(){
+  const loaded = await loadImage(imageSelect.value);
+  if (loaded){
+    img = loaded;
+    shuffleSolvable(300);
+    draw();
+    statusEl.textContent = 'Playing…';
+    startTimer();
+  } else {
+    statusEl.textContent = 'Select image & Load';
+  }
+})();
 </script>
 </body>
 </html>
