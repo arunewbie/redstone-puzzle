@@ -97,19 +97,7 @@
           <option value="stoney.png">Stoney</option>
           </select>
 
-          imageSelect.addEventListener('change', async ()=>{
-  const selected = imageSelect.value;
-  const loaded = await loadImage(selected);
-  if (!loaded) {
-    alert('Image not found: '+selected);
-    return;
-  }
-  img = loaded;
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw();
-  startTimer();
-  statusEl.textContent = 'Playing…';
-});
+        
 
         
         </div>
@@ -162,7 +150,20 @@ const playerLabel = document.getElementById('playerLabel');
 const usernameInput = document.getElementById('username');
 const saveNameBtn   = document.getElementById('saveName');
 
-const imageSelect = document.getElementById('imageSelect');
+imageSelect.addEventListener('change', async ()=>{
+  const selected = imageSelect.value;
+  const loaded = await loadImage(selected);
+  if (!loaded) {
+    alert('Image not found: '+selected);
+    return;
+  }
+  img = loaded;
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw();
+  startTimer();
+  statusEl.textContent = 'Playing…';
+});
+
 const reloadBtn   = document.getElementById('reload');
 const gridSelect  = document.getElementById('grid');
 const shuffleBtn  = document.getElementById('shuffle');
