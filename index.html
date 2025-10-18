@@ -167,7 +167,17 @@ imageSelect.addEventListener('change', async ()=>{
   statusEl.textContent = 'Playing…';
 });
 
-
+// Tombol preview manual tetap berfungsi
+reloadBtn.addEventListener('click', async ()=>{
+  const selected = imageSelect.value;
+  const loaded = await loadImage(selected);
+  if (!loaded) return;
+  img = loaded;
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw();
+  startTimer();
+  statusEl.textContent = 'Playing…';
+});
 
 const reloadBtn   = document.getElementById('reload');
 const gridSelect  = document.getElementById('grid');
