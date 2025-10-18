@@ -126,7 +126,8 @@
         <h3>Controls</h3>
         <div class="row">
           <button id="newGame">New Game</button>
-          <button id="shareX" class="secondary">Share on X</button>
+         <button id="shareX" class="secondary">Share on X</button>
+<button onclick="previewShareCard()" class="secondary">Preview Card 🖼️</button>
         </div>
         <div class="muted" style="font-size:13px;margin-top:6px">Share Your Best Score to X.</div>
       </div>
@@ -357,82 +358,93 @@ function confettiBurst(){
   wrap.classList.add('win-glow');
 }
 
-/* ===== Share to X (image card + tweet intent) ===== */
-async function createShareCard(username, bestMs, moves){
-  const w=1200, h=630;
-  const c=document.createElement('canvas'); c.width=w; c.height=h;
-  const g=c.getContext('2d');
-
-  // bg
-  const grd=g.createLinearGradient(0,0,w,h);
-  grd.addColorStop(0,'#11131a'); grd.addColorStop(1,'#1a0f0f');
-  g.fillStyle=grd; g.fillRect(0,0,w,h);
-
-  // blobs
-  g.globalAlpha=0.22;
-  g.fillStyle='#ff1e00'; g.beginPath(); g.arc(w*0.85,h*0.22,160,0,Math.PI*2); g.fill();
-  g.fillStyle='#ffffff'; g.beginPath(); g.arc(w*0.18,h*0.82,220,0,Math.PI*2); g.fill();
-  g.globalAlpha=1;
-
-  // logo (optional)
-  try{
-    const logo = await loadExtImage('/images/logo-redstone.svg');
-    if (logo){ g.drawImage(logo, w-220, 40, 160, 160* (logo.height/logo.width || 1)); }
-  }catch{}
-
-  // title
-  g.fillStyle='#fff'; g.font='800 64px system-ui';
-  g.fillText('Puzzle Slide', 60, 120);
-
-  // player
-  g.font='600 42px system-ui'; g.fillStyle='#cfd3da';
-  g.fillText('Player', 60, 200);
-  g.fillStyle='#ffffff'; g.font='800 56px system-ui';
-  g.fillText(username || 'Anon', 60, 258);
-
-  // best time + moves
-  g.fillStyle='#cfd3da'; g.font='600 42px system-ui';
-  g.fillText('Best Time', 60, 340);
-  g.fillStyle='#66ef9a'; g.font='800 88px system-ui';
-  g.fillText(fmt(bestMs), 60, 410);
-
-  g.fillStyle='#cfd3da'; g.font='600 42px system-ui';
-  g.fillText('Moves', 60, 490);
-  g.fillStyle='#66a0ff'; g.font='800 88px system-ui';
-  g.fillText(String(moves), 60, 560);
-
-  return new Promise((resolve)=> c.toBlob(b=>resolve(b),'image/png'));
+/* ====== SHARE CARD + SHARE ON X ====== */
+function blobToFile(blob, name) {
+  return new File([blob], name, { type: blob.type });
 }
-function loadExtImage(url){
-  return new Promise((resolve)=>{
-    const im=new Image(); im.crossOrigin='anonymous';
-    im.onload=()=>resolve(im); im.onerror=()=>resolve(null);
-    im.src=url + (url.includes('?')?'&':'?') + 'v=' + Date.now();
+
+function loadExtImage(url) {
+  return new Promise(resolve => {
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(null);
+    im.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
   });
 }
-function blobToFile(blob, name){ return new File([blob], name, {type:blob.type}); }
-  
-async function shareOnX(username){
-  const name = username || 'Anon';
 
-  // ambil skor terbaik user dari local leaderboard
+async function createShareCard(username, bestMs, moves) {
+  const w = 1200, h = 630;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+
+  // background gradasi
+  const grd = g.createLinearGradient(0, 0, w, h);
+  grd.addColorStop(0, '#11131a');
+  grd.addColorStop(1, '#1a0f0f');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, w, h);
+
+  // blob dekorasi
+  g.globalAlpha = 0.22;
+  g.fillStyle = '#ff1e00';
+  g.beginPath(); g.arc(w * 0.85, h * 0.22, 160, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#ffffff';
+  g.beginPath(); g.arc(w * 0.18, h * 0.82, 220, 0, Math.PI * 2); g.fill();
+  g.globalAlpha = 1;
+
+  // logo RedStone
+  try {
+    const logo = await loadExtImage('/images/logo-redstone.svg');
+    if (logo) g.drawImage(logo, w - 220, 40, 160, 160);
+  } catch {}
+
+  // teks
+  g.fillStyle = '#fff';
+  g.font = '800 64px system-ui';
+  g.fillText('Puzzle Slide', 60, 120);
+
+  g.font = '600 42px system-ui';
+  g.fillStyle = '#cfd3da';
+  g.fillText('Player', 60, 200);
+  g.fillStyle = '#ffffff';
+  g.font = '800 56px system-ui';
+  g.fillText(username || 'Anon', 60, 258);
+
+  g.fillStyle = '#cfd3da';
+  g.font = '600 42px system-ui';
+  g.fillText('Best Time', 60, 340);
+  g.fillStyle = '#66ef9a';
+  g.font = '800 88px system-ui';
+  g.fillText(fmt(bestMs), 60, 410);
+
+  g.fillStyle = '#cfd3da';
+  g.font = '600 42px system-ui';
+  g.fillText('Moves', 60, 490);
+  g.fillStyle = '#66a0ff';
+  g.font = '800 88px system-ui';
+  g.fillText(String(moves), 60, 560);
+
+  return new Promise(resolve => c.toBlob(b => resolve(b), 'image/png'));
+}
+
+async function shareOnX(username) {
+  const name = username || 'Anon';
   const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
   const my = board.find(e => e.name === name) || { time: 0, moves: 0 };
   const rank = Math.max(1, board.findIndex(e => e.name === name) + 1);
 
-  // buat kartu gambar
   const cardBlob = await createShareCard(name, my.time || 0, my.moves || 0);
   const file = blobToFile(cardBlob, 'puzzle-score.png');
 
-  // caption singkat
   const caption =
     `👑 ${name} just solved RedStone Puzzle!\n` +
     `Rank #${rank} • ⏳ ${fmt(my.time || 0)} • 🧩 ${my.moves || 0} moves\n` +
     `Can you beat this?`;
 
-  // Web Share Level 2 (mobile/desktop yg support) — mengirim GAMBAR langsung ke composer
-  try{
-    if (navigator.canShare && navigator.canShare({ files: [file] })){
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         title: 'RedStone Puzzle',
         text: caption,
@@ -441,15 +453,24 @@ async function shareOnX(username){
       });
       return;
     }
-  } catch(e){
-    // lanjut ke fallback
-  }
+  } catch (e) {}
 
-  // Fallback: intent tweet (tanpa gambar terlampir otomatis)
+  // fallback ke tweet intent
   const shareUrl =
     `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('Puzzle,Game,RedStone')}`;
   window.open(shareUrl, '_blank', 'noopener,noreferrer');
 }
+
+/* ==== Optional: tombol untuk cek preview card ==== */
+async function previewShareCard(){
+  const name = st.username || 'Anon';
+  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
+  const my = board.find(e => e.name === name) || { time: 0, moves: 0 };
+  const blob = await createShareCard(name, my.time || 0, my.moves || 0);
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
 
 
 /* ===== Events ===== */
