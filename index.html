@@ -150,6 +150,9 @@ const playerLabel = document.getElementById('playerLabel');
 const usernameInput = document.getElementById('username');
 const saveNameBtn   = document.getElementById('saveName');
 
+
+  const imageSelect = document.getElementById('imageSelect');
+
 imageSelect.addEventListener('change', async ()=>{
   const selected = imageSelect.value;
   const loaded = await loadImage(selected);
