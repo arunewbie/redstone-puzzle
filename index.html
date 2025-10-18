@@ -290,30 +290,30 @@ function move(i){
 
 
 /* ===== Leaderboard (local) ===== */
-function saveScore(username, ms, moves){
-  let board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
-  board.push({ name: username || 'Anon', time: ms, moves, date: Date.now() });
-  // sort by best time asc, then moves asc
-  board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves) );
-  board = board.slice(0, 10);
-  localStorage.setItem('ps_leaderboard', JSON.stringify(board));
-  renderLeaderboard();
-}
-function renderLeaderboard(){
+await fetch('/api/leaderboard', {
+  method: 'POST',
+  headers: {'Content-Type':'application/json'},
+  body: JSON.stringify({ name: username, time: elapsedMs, moves })
+});
+
+async function renderLeaderboard(){
   const el = document.getElementById('leaderboard');
-  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
   el.innerHTML = '';
-  board.forEach((e,i)=>{
-    const row = document.createElement('div');
-    row.className = 'leader';
-    const left = document.createElement('span');
-    left.innerHTML = `${i===0?'<span class="crown">👑</span>':''}${i+1}. ${e.name}`;
-    const right = document.createElement('span');
-    right.textContent = `${fmt(e.time)} • ${e.moves} mv`;
-    row.appendChild(left); row.appendChild(right);
-    el.appendChild(row);
-  });
+  try {
+    const res = await fetch('/api/leaderboard');
+    const data = await res.json();
+    data.forEach((e,i)=>{
+      const row = document.createElement('div');
+      row.className = 'leader';
+      row.innerHTML = `<span>${i===0?'👑 ':''}${i+1}. ${e.name}</span><span>${fmt(e.time)} • ${e.moves} mv</span>`;
+      el.appendChild(row);
+    });
+  } catch (err) {
+    console.error('Leaderboard fetch failed', err);
+    el.innerHTML = '<div class="muted">⚠️ Failed to load leaderboard</div>';
+  }
 }
+
 
 /* ===== Win FX (confetti simple + glow) ===== */
 function confettiBurst(){
