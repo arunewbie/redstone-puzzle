@@ -256,6 +256,24 @@ function posToIdx(x,y){
   return (col<0||row<0||col>=n||row>=n) ? -1 : row*n + col;
 }
 
+
+const previewBtn = document.getElementById('previewBtn');
+
+previewBtn.addEventListener('click', () => {
+  if (!imageSelect.value) return;
+  const imgUrl = IMAGE_BASE + imageSelect.value;
+  const previewWin = window.open('', '_blank', 'width=600,height=600');
+  previewWin.document.write(`
+    <title>Preview</title>
+    <style>
+      body { margin:0; display:flex; justify-content:center; align-items:center; background:#000; }
+      img { max-width:100%; max-height:100%; object-fit:contain; }
+    </style>
+    <img src="${imgUrl}" alt="preview">
+  `);
+});
+
+  
 function canMove(i){
   const n = st.n, e = st.empty;
   const sr = Math.floor(i/n), sc = i%n, er = Math.floor(e/n), ec = e % n;
