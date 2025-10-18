@@ -426,41 +426,30 @@ saveNameBtn.onclick = ()=>{
 gridSelect.addEventListener('change', ()=>{
   st.n = parseInt(gridSelect.value,10);
   gridLabel.textContent = `${st.n}×${st.n}`;
-  if (img){ 
-    setSolvedLayout();                  // tampil utuh, timer belum jalan
-  }
+  if (img){ shuffleSolvable(Math.max(200, st.n*st.n*30)); draw(); startTimer(); }
 });
 
 reloadBtn.addEventListener('click', async ()=>{
   const loaded = await loadImage(imageSelect.value);
   if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
   img = loaded;
-  setSolvedLayout();                    // tampil utuh (no shuffle, no timer)
-  statusEl.textContent = 'Ready';
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw(); startTimer(); statusEl.textContent='Playing…';
 });
 
-/* Tombol Start Game (bukan Shuffle) */
-const startBtn = document.getElementById('startBtn'); // pastikan id tombol di HTML: startBtn
-startBtn.addEventListener('click', async ()=>{
-  if (!img){
-    const loaded = await loadImage(imageSelect.value);
-    if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
-    img = loaded;
-  }
+shuffleBtn.addEventListener('click', ()=>{
+  if (!img) return;
   shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw();
-  statusEl.textContent = 'Shuffled — make your first move!';
-  // ⛔️ JANGAN startTimer di sini. Timer mulai setelah swap pertama (lihat move()).
+  draw(); startTimer(); statusEl.textContent='Playing…';
 });
 
 newBtn.addEventListener('click', async ()=>{
   if (!img){
-    const loaded = await loadImage(imageSelect.value);
-    if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
-    img = loaded;
+    img = await loadImage(imageSelect.value);
+    if (!img){ alert('Image not found: '+imageSelect.value); return; }
   }
-  setSolvedLayout();                    // reset ke kondisi utuh
-  statusEl.textContent = 'Ready';
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw(); startTimer(); statusEl.textContent='Playing…';
 });
 
 canvas.addEventListener('click', e=>{
@@ -468,20 +457,18 @@ canvas.addEventListener('click', e=>{
   const i = posToIdx(e.clientX, e.clientY);
   if (i>=0) move(i);
 });
-
 canvas.addEventListener('touchend', e=>{
   if (!img) return;
   const t = e.changedTouches[0];
   const i = posToIdx(t.clientX, t.clientY);
   if (i>=0) move(i);
 },{passive:true});
-
 window.addEventListener('keydown', e=>{
   if (!img) return;
   const n = st.n, eIdx = st.empty;
   let target = -1;
   const r = Math.floor(eIdx/n), c = eIdx % n;
-  if (e.key==='ArrowUp'   && r<n-1) target = eIdx + n;
+  if (e.key==='ArrowUp' && r<n-1)   target = eIdx + n;
   if (e.key==='ArrowDown' && r>0)   target = eIdx - n;
   if (e.key==='ArrowLeft' && c<n-1) target = eIdx + 1;
   if (e.key==='ArrowRight'&& c>0)   target = eIdx - 1;
