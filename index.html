@@ -436,7 +436,7 @@ async function shareOnX(username) {
     `👑 ${name} just solved RedStone Puzzle!\n` +
     `Rank #${rank} • ⏳ ${fmt(my.time || 0)} • 🧩 ${my.moves || 0} moves\n` +
     `Can you beat this?`+
-  '@r@redstone_defi' ;
+  ' @redstone_defi ' ;
 
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
