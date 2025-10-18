@@ -426,7 +426,9 @@ saveNameBtn.onclick = ()=>{
 gridSelect.addEventListener('change', ()=>{
   st.n = parseInt(gridSelect.value,10);
   gridLabel.textContent = `${st.n}×${st.n}`;
-  if (img){ shuffleSolvable(Math.max(200, st.n*st.n*30)); draw(); startTimer(); }
+  if (img){ 
+    setSolvedLayout();                  // tampil utuh, timer belum jalan
+  }
 });
 
 reloadBtn.addEventListener('click', async ()=>{
