@@ -435,23 +435,26 @@ reloadBtn.addEventListener('click', async ()=>{
   const loaded = await loadImage(imageSelect.value);
   if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
   img = loaded;
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  setSolvedLayout();                    // tampil utuh (no shuffle, no timer)
+  statusEl.textContent = 'Ready';
 });
 
 shuffleBtn.addEventListener('click', ()=>{
   if (!img) return;
   shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  draw(); 
+  statusEl.textContent = 'Shuffled — make your first move!';
+  // ⛔️ JANGAN startTimer di sini. Timer mulai setelah swap pertama (lihat move()).
 });
 
 newBtn.addEventListener('click', async ()=>{
   if (!img){
-    img = await loadImage(imageSelect.value);
-    if (!img){ alert('Image not found: '+imageSelect.value); return; }
+    const loaded = await loadImage(imageSelect.value);
+    if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
+    img = loaded;
   }
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  setSolvedLayout();                    // reset ke kondisi utuh
+  statusEl.textContent = 'Ready';
 });
 
 canvas.addEventListener('click', e=>{
