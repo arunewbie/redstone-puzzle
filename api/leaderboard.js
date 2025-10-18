@@ -4,6 +4,7 @@ export const config = { runtime: 'edge' };
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
+// Panggilan REST Upstash – kirim { args: [...] } dan semua argumen sebagai string
 async function ucall(cmd, ...args) {
   if (!UPSTASH_URL || !UPSTASH_TOKEN) {
     return new Response(JSON.stringify({ error: 'Upstash not configured' }), {
@@ -11,13 +12,15 @@ async function ucall(cmd, ...args) {
     });
   }
 
+  const payload = { args: args.map(v => (v == null ? '' : String(v))) };
+
   const res = await fetch(`${UPSTASH_URL}/${cmd}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${UPSTASH_TOKEN}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(args),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
@@ -29,9 +32,10 @@ async function ucall(cmd, ...args) {
 
 export default async function handler(req) {
   try {
+    // GET: ambil TOP 10
     if (req.method === 'GET') {
-      // TOP 10: ZRANGE 0..9 WITHSCORES
-      const r = await ucall('zrange', 'puzzle:best_time', 0, 9, 'WITHSCORES');
+      // ZRANGE key 0 9 WITHSCORES
+      const r = await ucall('zrange', 'puzzle:best_time', '0', '9', 'WITHSCORES');
       const arr = r?.result || r || [];
       const out = [];
       for (let i = 0; i < arr.length; i += 2) {
@@ -40,6 +44,7 @@ export default async function handler(req) {
       return new Response(JSON.stringify(out), { headers: { 'content-type': 'application/json' } });
     }
 
+    // POST: simpan score (lebih baik = waktu lebih kecil)
     if (req.method === 'POST') {
       const body = await req.json().catch(() => null);
       if (!body || typeof body !== 'object') {
@@ -53,10 +58,9 @@ export default async function handler(req) {
       const time = Math.max(0, Number(body.time || 0));
       const moves = Math.max(0, Number(body.moves || 0));
 
-      // Simpan hanya jika lebih baik: ZADD LT
-      await ucall('zadd', 'puzzle:best_time', 'LT', time, name);
-      // Simpan meta (opsional, tidak dipakai oleh GET sederhana)
-      await ucall('hset', `puzzle:user:${name}`, 'time', time, 'moves', moves, 'updated', Date.now());
+      // ZADD key LT time name
+      await ucall('zadd', 'puzzle:best_time', 'LT', String(time), name);
+      await ucall('hset', `puzzle:user:${name}`, 'time', String(time), 'moves', String(moves), 'updated', String(Date.now()));
 
       return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } });
     }
