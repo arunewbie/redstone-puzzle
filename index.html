@@ -439,7 +439,7 @@ async function shareOnX(username) {
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
-        title: 'RedStone Puzzle',
+        title: 'RedStone Puzzle Game',
         text: caption,
         files: [file],
         url: location.origin
@@ -450,7 +450,7 @@ async function shareOnX(username) {
 
   // fallback ke tweet intent
   const shareUrl =
-    `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('Puzzle,Game,RedStone')}`;
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('RedStone')}`;
   window.open(shareUrl, '_blank', 'noopener,noreferrer');
 }
 
