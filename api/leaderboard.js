@@ -7,6 +7,17 @@ const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const ZSET_KEY = 'puzzle:best_time';     // skor = waktu (ms), makin kecil makin bagus
 const USER_HASH_PREFIX = 'puzzle:user:'; // HSET per user: time, moves, updated, last_submit
 
+
+function validateEnv() {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    throw new Error('Upstash not configured (missing REST URL/TOKEN).');
+  }
+  if (!/^https:\/\/.*upstash\.io/.test(process.env.UPSTASH_REDIS_REST_URL)) {
+    throw new Error('UPSTASH_REDIS_REST_URL must be an HTTPS Upstash REST URL (not rediss://).');
+  }
+}
+
+
 async function ucall(cmd, ...args) {
   // Upstash REST: POST {args[]} ke {BASE}/{command}
   const res = await fetch(`${UPSTASH_URL}/${cmd}`, {
