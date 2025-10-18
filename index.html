@@ -135,7 +135,7 @@
   <div class="footer">© RedStone Puzzle Game by arunewbie </div>
 
 <script>
-/* ====== Core Sliding Puzzle with username + timer + leaderboard + share + win FX ====== */
+/* ========= DOM ========= */
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const fx = document.getElementById('fx');
@@ -153,35 +153,67 @@ const saveNameBtn   = document.getElementById('saveName');
 
 const imageSelect = document.getElementById('imageSelect');
 const reloadBtn   = document.getElementById('reload');
-const gridSelect  = document.getElementById('grid');
-const shuffleBtn  = document.getElementById('shuffle');
+const shuffleBtn  = document.getElementById('shuffle');   // <- tombol Start/Shuffle
 const newBtn      = document.getElementById('newGame');
 const shareBtn    = document.getElementById('shareX');
 
+const previewBtn = document.getElementById('previewBtn');
+const previewContainer = document.getElementById('previewContainer');
+const previewImage = document.getElementById('previewImage');
+
+/* ========= STATE ========= */
 const IMAGE_BASE = '/images/';
 let img = null;
 
 const st = {
   n: 3,
   tiles: [],
-  moves: 0,
   empty: 0,
+  moves: 0,
   timer: null,
-  startedAt: 0,
-  username: localStorage.getItem('ps_username') || '',
+  startedAt: 0,     // 0 = belum mulai
+  username: localStorage.getItem('ps_username') || 'Anon',
 };
 
-playerLabel.textContent = st.username || '—';
+playerLabel.textContent = st.username || 'Anon';
 if (st.username) usernameInput.value = st.username;
 
+/* ========= UTIL ========= */
 function fmt(ms){
   const s = Math.floor(ms/1000), m = Math.floor(s/60), ss = s % 60;
-  return String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+  return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');
 }
-function startTimer(){ stopTimer(); st.startedAt = Date.now(); st.timer = setInterval(()=>{ timeEl.textContent = fmt(Date.now() - st.startedAt); }, 250); }
-function stopTimer(){ if(st.timer){ clearInterval(st.timer); st.timer=null; } }
+function startTimer(){
+  stopTimer();
+  st.startedAt = Date.now();
+  st.timer = setInterval(()=> timeEl.textContent = fmt(Date.now() - st.startedAt), 250);
+}
+function stopTimer(){ if(st.timer){ clearInterval(st.timer); st.timer = null; } }
 
-function shuffleSolvable(steps=200){
+function loadImage(name){
+  return new Promise((resolve)=>{
+    const image = new Image();
+    image.onload = ()=>resolve(image);
+    image.onerror = ()=>resolve(null);
+    image.src = IMAGE_BASE + name + `?v=${Date.now()}`;
+  });
+}
+
+function resetOrderedBoard(){
+  const N = st.n*st.n;
+  st.tiles = Array.from({length:N}, (_,i)=>i);
+  st.empty = N-1;
+  st.moves = 0;
+  movesEl.textContent = '0';
+  timeEl.textContent = '00:00';
+  stopTimer();
+  st.startedAt = 0;               // tandai belum mulai
+  statusEl.textContent = 'Ready';
+  statusEl.classList.remove('ok');
+  draw();
+}
+
+function shuffleSolvable(steps = 200){
   const n = st.n, N = n*n;
   st.tiles = Array.from({length:N}, (_,i)=>i);
   st.empty = N-1;
@@ -193,10 +225,9 @@ function shuffleSolvable(steps=200){
     if (r<n-1) opt.push(e+n);
     if (c>0) opt.push(e-1);
     if (c<n-1) opt.push(e+1);
-    const filtered = opt.filter(x=>x!==last);
-    const pool = filtered.length ? filtered : opt;
+    const pool = (opt.filter(x=>x!==last).length ? opt.filter(x=>x!==last) : opt);
     const next = pool[Math.floor(Math.random()*pool.length)];
-    swap(e,next);
+    const t = st.tiles[e]; st.tiles[e]=st.tiles[next]; st.tiles[next]=t;
     last = e;
     st.empty = next;
   }
@@ -207,59 +238,39 @@ function shuffleSolvable(steps=200){
   statusEl.classList.remove('ok');
 }
 
-function swap(a,b){ const t = st.tiles[a]; st.tiles[a]=st.tiles[b]; st.tiles[b]=t; }
-function isSolved(){ return st.tiles.every((v,i)=>v===i); }
-
-function loadImage(name){
-  return new Promise((resolve)=>{
-    const image = new Image();
-    image.onload = ()=>resolve(image);
-    image.onerror = ()=>resolve(null);
-    image.src = IMAGE_BASE + name + `?v=${Date.now()}`;
-  });
-}
-
 function draw(){
   const n = st.n, N = n*n, tW = canvas.width/n, tH = canvas.height/n;
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  if (!img) return;
   for (let i=0;i<N;i++){
     const val = st.tiles[i];
     const r = Math.floor(i/n), c = i % n;
     if (val === N-1){
-      ctx.fillStyle='#0b0c12';
+      // petak kosong
+      ctx.fillStyle = '#0b0c12';
       ctx.fillRect(c*tW, r*tH, tW, tH);
       continue;
     }
     const sR = Math.floor(val/n), sC = val % n;
-    ctx.drawImage(img, sC*(img.width/n), sR*(img.height/n), img.width/n, img.height/n, c*tW, r*tH, tW, tH);
-    ctx.strokeStyle='rgba(255,255,255,.075)';
+    ctx.drawImage(
+      img,
+      sC*(img.width/n),  sR*(img.height/n),  img.width/n, img.height/n,
+      c*tW,              r*tH,               tW,          tH
+    );
+    ctx.strokeStyle = 'rgba(255,255,255,.075)';
     ctx.strokeRect(c*tW+0.5, r*tH+0.5, tW-1, tH-1);
   }
 }
 
 function posToIdx(x,y){
-  const n = st.n;
   const rect = canvas.getBoundingClientRect();
-  const cx = (x-rect.left)*(canvas.width/rect.width);
-  const cy = (y-rect.top)*(canvas.height/rect.height);
-  const col = Math.floor(cx/(canvas.width/n));
-  const row = Math.floor(cy/(canvas.height/n));
-  return (col<0||row<0||col>=n||row>=n) ? -1 : row*n + col;
+  const nx = (x-rect.left)*(canvas.width/rect.width);
+  const ny = (y-rect.top)*(canvas.height/rect.height);
+  const col = Math.floor(nx/(canvas.width/st.n));
+  const row = Math.floor(ny/(canvas.height/st.n));
+  return (col<0||row<0||col>=st.n||row>=st.n) ? -1 : row*st.n + col;
 }
 
-
-const previewBtn = document.getElementById('previewBtn');
-const previewContainer = document.getElementById('previewContainer');
-const previewImage = document.getElementById('previewImage');
-
-previewBtn.addEventListener('click', () => {
-  const imgName = imageSelect.value;
-  if (!imgName) return;
-  previewImage.src = IMAGE_BASE + imgName;
-  previewContainer.style.display = 'block';
-});
-
-  
 function canMove(i){
   const n = st.n, e = st.empty;
   const sr = Math.floor(i/n), sc = i%n, er = Math.floor(e/n), ec = e % n;
@@ -269,12 +280,12 @@ function canMove(i){
 function move(i){
   if (!canMove(i)) return;
 
-  // lakukan perpindahan dulu
-  swap(i, st.empty);
+  // swap
+  const t = st.tiles[i]; st.tiles[i]=st.tiles[st.empty]; st.tiles[st.empty]=t;
   st.empty = i;
 
-  // mulai timer HANYA saat langkah efektif pertama
-  if (!st.timer && !st.startedAt && st.moves === 0){
+  // Mulai timer saat langkah efektif pertama
+  if (!st.timer && st.startedAt===0 && st.moves===0){
     startTimer();
     statusEl.textContent = 'Playing…';
   }
@@ -283,276 +294,20 @@ function move(i){
   movesEl.textContent = st.moves;
   draw();
 
-  if (isSolved()){
+  if (st.tiles.every((v,idx)=>v===idx)){
     onWin();
   }
 }
 
-
+/* ========= Leaderboard (API vercel) ========= */
 async function saveScoreToServer(name, ms, moves){
-  const r = await fetch('/api/leaderboard', {
+  const res = await fetch('/api/leaderboard', {
     method:'POST',
     headers:{'content-type':'application/json'},
     body: JSON.stringify({ name, time: ms, moves })
   });
-  return r.json();
-}
-
-async function renderLeaderboard(){
-  const el = document.getElementById('leaderboard');
-  el.innerHTML = '';
-  const data = await fetch('/api/leaderboard').then(r=>r.json());
-  data.forEach((e,i)=>{
-    const row = document.createElement('div');
-    row.className = 'leader';
-    row.innerHTML = `<span>${i===0?'👑 ':''}${i+1}. ${e.name}</span>
-                     <span>${fmt(e.time)} • ${e.moves} mv</span>`;
-    el.appendChild(row);
-  });
-}
-
-
-
-/* ===== Win FX (confetti simple + glow) ===== */
-function confettiBurst(){
-  fxctx.clearRect(0,0,fx.width,fx.height);
-  const particles = [];
-  const N = 120;
-  for (let i=0;i<N;i++){
-    particles.push({
-      x: fx.width/2, y: fx.height/2,
-      vx: (Math.random()*2-1)*4,
-      vy: (Math.random()*2-1)*4 - 2,
-      g: 0.08 + Math.random()*0.06,
-      life: 60 + Math.random()*20,
-      size: 2 + Math.random()*3
-    });
-  }
-  let t=0;
-  function tick(){
-    fxctx.clearRect(0,0,fx.width,fx.height);
-    particles.forEach(p=>{
-      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life--;
-      fxctx.globalAlpha = Math.max(0, p.life/80);
-      fxctx.fillStyle = ['#ff1e00','#ffd166','#66ef9a','#66a0ff','#ffffff'][Math.floor(Math.random()*5)];
-      fxctx.beginPath(); fxctx.arc(p.x,p.y,p.size,0,Math.PI*2); fxctx.fill();
-    });
-    fxctx.globalAlpha = 1;
-    t++;
-    if (t<90) requestAnimationFrame(tick);
-    else fxctx.clearRect(0,0,fx.width,fx.height);
-  }
-  tick();
-  // glow anim on wrapper
-  wrap.classList.remove('win-glow'); // restart animation
-  void wrap.offsetWidth;
-  wrap.classList.add('win-glow');
-}
-
-/* ====== SHARE CARD + SHARE ON X ====== */
-function blobToFile(blob, name) {
-  return new File([blob], name, { type: blob.type });
-}
-
-function loadExtImage(url) {
-  return new Promise(resolve => {
-    const im = new Image();
-    im.crossOrigin = 'anonymous';
-    im.onload = () => resolve(im);
-    im.onerror = () => resolve(null);
-    im.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
-  });
-}
-
-async function createShareCard(username, bestMs, moves) {
-  const w = 1200, h = 630;
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  const g = c.getContext('2d');
-
-  // background gradasi
-  const grd = g.createLinearGradient(0, 0, w, h);
-  grd.addColorStop(0, '#11131a');
-  grd.addColorStop(1, '#1a0f0f');
-  g.fillStyle = grd;
-  g.fillRect(0, 0, w, h);
-
-  // blob dekorasi
-  g.globalAlpha = 0.22;
-  g.fillStyle = '#ff1e00';
-  g.beginPath(); g.arc(w * 0.85, h * 0.22, 160, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#ffffff';
-  g.beginPath(); g.arc(w * 0.18, h * 0.82, 220, 0, Math.PI * 2); g.fill();
-  g.globalAlpha = 1;
-
-  // logo RedStone
-  try {
-    const logo = await loadExtImage('/images/redstonelogox.png');
-    if (logo) g.drawImage(logo, w - 300, 40, 300, 300);
-  } catch {}
-
-  // teks
-  g.fillStyle = '#fff';
-  g.font = '800 64px system-ui';
-  g.fillText('RedStone Puzzle Game', 60, 120);
-
-  g.font = '600 42px system-ui';
-  g.fillStyle = '#cfd3da';
-  g.fillText('Player', 60, 200);
-  g.fillStyle = '#ffffff';
-  g.font = '800 56px system-ui';
-  g.fillText(username || 'Anon', 60, 258);
-
-  g.fillStyle = '#cfd3da';
-  g.font = '600 42px system-ui';
-  g.fillText('Best Time', 60, 340);
-  g.fillStyle = '#66ef9a';
-  g.font = '800 88px system-ui';
-  g.fillText(fmt(bestMs), 60, 410);
-
-  g.fillStyle = '#cfd3da';
-  g.font = '600 42px system-ui';
-  g.fillText('Moves', 60, 490);
-  g.fillStyle = '#66a0ff';
-  g.font = '800 88px system-ui';
-  g.fillText(String(moves), 60, 560);
-
-  return new Promise(resolve => c.toBlob(b => resolve(b), 'image/png'));
-}
-
-async function shareOnX(username) {
-  const name = username || 'Anon';
-  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
-  const my = board.find(e => e.name === name) || { time: 0, moves: 0 };
-  const rank = Math.max(1, board.findIndex(e => e.name === name) + 1);
-
-  const cardBlob = await createShareCard(name, my.time || 0, my.moves || 0);
-  const file = blobToFile(cardBlob, 'puzzle-score.png');
-
-  const caption =
-    
-    `👑 ${name} just solved RedStone Puzzle!\n` +
-    `Rank #${rank} • ⏳ ${fmt(my.time || 0)} • 🧩 ${my.moves || 0} moves\n` +
-    `Can you beat this?`+
-  ' @redstone_defi ' ;
-
-  try {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        title: 'RedStone Puzzle Game',
-        text: caption,
-        files: [file],
-        url: location.origin
-      });
-      return;
-    }
-  } catch (e) {}
-
-  // fallback ke tweet intent
-  const shareUrl =
-    `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('RedStone')}`;
-  window.open(shareUrl, '_blank', 'noopener,noreferrer');
-}
-
-/* ==== Optional: tombol untuk cek preview card ==== */
-async function previewShareCard(){
-  const name = st.username || 'Anon';
-  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
-  const my = board.find(e => e.name === name) || { time: 0, moves: 0 };
-  const blob = await createShareCard(name, my.time || 0, my.moves || 0);
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-}
-
-
-
-/* ===== Events ===== */
-saveNameBtn.onclick = ()=>{
-  const v = usernameInput.value.trim();
-  st.username = v || 'Anon';
-  localStorage.setItem('ps_username', st.username);
-  playerLabel.textContent = st.username;
-};
-
-
-
-reloadBtn.addEventListener('click', async ()=>{
-  const loaded = await loadImage(imageSelect.value);
-  if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
-  img = loaded;
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
-});
-
-shuffleBtn.addEventListener('click', ()=>{
-  if (!img) return;
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
-});
-
-newBtn.addEventListener('click', async ()=>{
-  if (!img){
-    img = await loadImage(imageSelect.value);
-    if (!img){ alert('Image not found: '+imageSelect.value); return; }
-  }
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
-});
-
-canvas.addEventListener('click', e=>{
-  if (!img) return;
-  const i = posToIdx(e.clientX, e.clientY);
-  if (i>=0) move(i);
-});
-canvas.addEventListener('touchend', e=>{
-  if (!img) return;
-  const t = e.changedTouches[0];
-  const i = posToIdx(t.clientX, t.clientY);
-  if (i>=0) move(i);
-},{passive:true});
-window.addEventListener('keydown', e=>{
-  if (!img) return;
-  const n = st.n, eIdx = st.empty;
-  let target = -1;
-  const r = Math.floor(eIdx/n), c = eIdx % n;
-  if (e.key==='ArrowUp' && r<n-1)   target = eIdx + n;
-  if (e.key==='ArrowDown' && r>0)   target = eIdx - n;
-  if (e.key==='ArrowLeft' && c<n-1) target = eIdx + 1;
-  if (e.key==='ArrowRight'&& c>0)   target = eIdx - 1;
-  if (target>=0) move(target);
-});
-
-shareBtn.onclick = () => shareOnX(st.username || 'Anon');
-
-
-
-  // ===== Leaderboard (remote via /api/leaderboard) + fallback lokal =====
-async function saveScoreToServer(name, ms, moves){
-  const res = await fetch('/api/leaderboard', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, time: ms, moves })
-  });
   if (!res.ok) throw new Error('submit failed');
   return res.json();
-}
-
-      // fallback lokal kalau server gagal
-      let board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
-      board.push({ name: name||'Anon', time: ms, moves });
-      board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves));
-      board = board.slice(0,10);
-      localStorage.setItem('ps_leaderboard', JSON.stringify(board));
-    }
-  }catch(e){
-    // fallback lokal kalau jaringan error
-    let board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
-    board.push({ name: name||'Anon', time: ms, moves });
-    board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves));
-    board = board.slice(0,10);
-    localStorage.setItem('ps_leaderboard', JSON.stringify(board));
-  }
-  renderLeaderboard();
 }
 
 async function fetchLeaderboard(){
@@ -560,7 +315,8 @@ async function fetchLeaderboard(){
     const res = await fetch('/api/leaderboard');
     if(!res.ok) throw new Error('GET failed');
     return await res.json(); // [{name,time,moves}, ...]
-  }catch(e){
+  }catch{
+    // fallback baca localStorage jika perlu
     return JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
   }
 }
@@ -573,63 +329,171 @@ async function renderLeaderboard(){
   (data||[]).forEach((e,i)=>{
     const row = document.createElement('div');
     row.className = 'leader';
-    row.innerHTML = `<span>${i===0?'👑 ':''}${i+1}. ${e.name}</span>
-                     <span>${fmt(e.time)} • ${e.moves} mv</span>`;
+    row.innerHTML = `<span>${i===0?'👑 ':''}${i+1}. ${e.name||'Anon'}</span>
+                     <span>${fmt(Number(e.time||0))} • ${Number(e.moves||0)} mv</span>`;
     el.appendChild(row);
   });
+  if (!data || data.length===0){
+    el.innerHTML = '<div class="muted">Belum ada skor</div>';
+  }
 }
 
+/* ========= Win FX ========= */
+function confettiBurst(){
+  fxctx.clearRect(0,0,fx.width,fx.height);
+  const particles = [];
+  for (let i=0;i<120;i++){
+    particles.push({
+      x: fx.width/2, y: fx.height/2,
+      vx: (Math.random()*2-1)*4,
+      vy: (Math.random()*2-1)*4 - 2,
+      g: 0.08 + Math.random()*0.06,
+      life: 60 + Math.random()*20,
+      size: 2 + Math.random()*3
+    });
+  }
+  let t=0;
+  (function tick(){
+    fxctx.clearRect(0,0,fx.width,fx.height);
+    particles.forEach(p=>{
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life--;
+      fxctx.globalAlpha = Math.max(0, p.life/80);
+      fxctx.fillStyle = ['#ff1e00','#ffd166','#66ef9a','#66a0ff','#ffffff'][Math.floor(Math.random()*5)];
+      fxctx.beginPath(); fxctx.arc(p.x,p.y,p.size,0,Math.PI*2); fxctx.fill();
+    });
+    fxctx.globalAlpha = 1;
+    if (++t<90) requestAnimationFrame(tick);
+    else fxctx.clearRect(0,0,fx.width,fx.height);
+  })();
+  // glow
+  wrap.classList.remove('win-glow'); void wrap.offsetWidth; wrap.classList.add('win-glow');
+}
 
+/* ========= Share Card ========= */
+function blobToFile(blob, name){ return new File([blob], name, {type:blob.type}); }
+function loadExtImage(url){
+  return new Promise(resolve=>{
+    const im=new Image(); im.crossOrigin='anonymous';
+    im.onload=()=>resolve(im); im.onerror=()=>resolve(null);
+    im.src=url + (url.includes('?')?'&':'?') + 'v=' + Date.now();
+  });
+}
+async function createShareCard(username, bestMs, moves){
+  const w=1200,h=630; const c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d');
+  const grd=g.createLinearGradient(0,0,w,h); grd.addColorStop(0,'#11131a'); grd.addColorStop(1,'#1a0f0f'); g.fillStyle=grd; g.fillRect(0,0,w,h);
+  g.globalAlpha=0.22; g.fillStyle='#ff1e00'; g.beginPath(); g.arc(w*0.85,h*0.22,160,0,Math.PI*2); g.fill();
+  g.fillStyle='#ffffff'; g.beginPath(); g.arc(w*0.18,h*0.82,220,0,Math.PI*2); g.fill(); g.globalAlpha=1;
+  try{ const logo = await loadExtImage('/images/redstonelogox.png'); if (logo) g.drawImage(logo, w-300, 40, 300, 300);}catch{}
+  g.fillStyle='#fff'; g.font='800 64px system-ui'; g.fillText('RedStone Puzzle Game', 60, 120);
+  g.font='600 42px system-ui'; g.fillStyle='#cfd3da'; g.fillText('Player', 60, 200);
+  g.fillStyle='#ffffff'; g.font='800 56px system-ui'; g.fillText(username||'Anon', 60, 258);
+  g.fillStyle='#cfd3da'; g.font='600 42px system-ui'; g.fillText('Best Time', 60, 340);
+  g.fillStyle='#66ef9a'; g.font='800 88px system-ui'; g.fillText(fmt(bestMs), 60, 410);
+  g.fillStyle='#cfd3da'; g.font='600 42px system-ui'; g.fillText('Moves', 60, 490);
+  g.fillStyle='#66a0ff'; g.font='800 88px system-ui'; g.fillText(String(moves), 60, 560);
+  return new Promise(resolve=> c.toBlob(b=>resolve(b),'image/png'));
+}
+async function shareOnX(username){
+  const name = username || 'Anon';
+  const data = await fetchLeaderboard();
+  const me = data.find(e=>e.name===name) || {time:0,moves:0};
+  const blob = await createShareCard(name, Number(me.time||0), Number(me.moves||0));
+  const file = blobToFile(blob, 'puzzle-score.png');
+  const text = `I just played RedStone Puzzle!\n⏳ ${fmt(Number(me.time||0))} • 🧩 ${Number(me.moves||0)} moves`;
+  try{
+    if (navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({ title:'RedStone Puzzle', text, files:[file], url:location.origin });
+      return;
+    }
+  }catch{}
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('RedStone')}`;
+  window.open(url,'_blank','noopener,noreferrer');
+}
 
-/* ===== Win handler ===== */
+/* ========= EVENTS ========= */
+saveNameBtn.onclick = ()=>{
+  const v = (usernameInput.value||'').trim() || 'Anon';
+  st.username = v;
+  localStorage.setItem('ps_username', v);
+  playerLabel.textContent = v;
+};
+
+previewBtn.addEventListener('click', ()=>{
+  const imgName = imageSelect.value;
+  if (!imgName) return;
+  previewImage.src = IMAGE_BASE + imgName;
+  previewContainer.style.display = 'block';
+});
+
+reloadBtn.addEventListener('click', async ()=>{
+  const loaded = await loadImage(imageSelect.value);
+  if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
+  img = loaded;
+  resetOrderedBoard();           // <- TIDAK diacak saat load
+});
+
+shuffleBtn.addEventListener('click', ()=>{   // <- tombol Start/Shuffle
+  if (!img){ alert('Load image dulu.'); return; }
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw();
+  // timer tetap start saat langkah pertama (di move())
+  statusEl.textContent = 'Playing…';
+});
+
+newBtn.addEventListener('click', ()=> resetOrderedBoard());
+
+canvas.addEventListener('click', e=>{ if (!img) return; const i = posToIdx(e.clientX, e.clientY); if (i>=0) move(i); });
+canvas.addEventListener('touchend', e=>{ if (!img) return; const t = e.changedTouches[0]; const i = posToIdx(t.clientX, t.clientY); if (i>=0) move(i); }, {passive:true});
+window.addEventListener('keydown', e=>{
+  if (!img) return;
+  const n = st.n, eIdx = st.empty;
+  let target = -1;
+  const r = Math.floor(eIdx/n), c = eIdx % n;
+  if (e.key==='ArrowUp'   && r<n-1) target = eIdx + n;
+  if (e.key==='ArrowDown' && r>0)   target = eIdx - n;
+  if (e.key==='ArrowLeft' && c<n-1) target = eIdx + 1;
+  if (e.key==='ArrowRight'&& c>0)   target = eIdx - 1;
+  if (target>=0) move(target);
+});
+
+shareBtn.onclick = ()=> shareOnX(st.username || 'Anon');
+
+/* ========= WIN HANDLER ========= */
 async function onWin(){
   stopTimer();
   statusEl.textContent='Solved!';
   statusEl.classList.add('ok');
   confettiBurst();
 
-  const elapsed = Date.now() - st.startedAt;   // ms
+  const elapsed = Date.now() - st.startedAt;
   const name = (st.username || 'Anon').trim() || 'Anon';
 
-  try {
-    await saveScoreToServer(name, elapsed, st.moves);
-    await renderLeaderboard();  // refresh list setelah submit
-  } catch(e){
-    console.error(e);
-    alert('Gagal simpan skor. Coba lagi.');
-  }
-}
-
-
-
-/* ===== Init ===== */
-async function renderLeaderboard(){
-  const el = document.getElementById('leaderboard');
-  el.innerHTML = 'Loading...';
   try{
-    const list = await fetch('/api/leaderboard').then(r=>r.json());
-    el.innerHTML = '';
-    list.forEach((e,i)=>{
-      const row = document.createElement('div');
-      row.className = 'leader';
-      row.innerHTML =
-        `<span>${i===0?'👑 ':''}${i+1}. ${e.name}</span>
-         <span>${formatTime(e.time)} • ${e.moves} mv</span>`;
-      el.appendChild(row);
-    });
-    if(list.length===0) el.innerHTML = '<div class="muted">Belum ada skor</div>';
-  }catch(err){
-    el.innerHTML = '<div class="muted">Gagal memuat leaderboard</div>';
-    console.error(err);
+    await saveScoreToServer(name, elapsed, st.moves);
+  }catch(e){
+    // fallback local kalau API gagal
+    let board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
+    board.push({ name, time: elapsed, moves: st.moves, date: Date.now() });
+    board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves));
+    board = board.slice(0,10);
+    localStorage.setItem('ps_leaderboard', JSON.stringify(board));
   }
+  renderLeaderboard();
 }
 
-function formatTime(ms){
-  const s = Math.floor(ms/1000), m = Math.floor(s/60), ss = s%60;
-  return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
-}
-
+/* ========= INIT ========= */
+(async function init(){
+  // load default image, tapi JANGAN shuffle
+  const loaded = await loadImage(imageSelect.value);
+  if (loaded){
+    img = loaded;
+    resetOrderedBoard();
+  } else {
+    statusEl.textContent = 'Select image & Load';
+  }
+  await renderLeaderboard();
 })();
 </script>
+
 </body>
 </html>
