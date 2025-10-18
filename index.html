@@ -502,19 +502,6 @@ function onWin(){
   saveScore(name, elapsed, st.moves);
 }
 
-
-/* ===== Win handler ===== */
-function onWin(){
-  stopTimer();
-  statusEl.textContent='Solved!';
-  statusEl.classList.add('ok');
-  confettiBurst();
-
-  const elapsed = Date.now() - st.startedAt;
-  const name = st.username || 'Anon';
-  saveScore(name, elapsed, st.moves);
-}
-
 /* ===== Init ===== */
 renderLeaderboard();
 (async function init(){
