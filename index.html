@@ -411,32 +411,46 @@ function loadExtImage(url){
   });
 }
 function blobToFile(blob, name){ return new File([blob], name, {type:blob.type}); }
+  
 async function shareOnX(username){
-  // ambil best score user
   const name = username || 'Anon';
-  const board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
-  const my = board.find(e=>e.name===name) || {time:0, moves:0};
-  const card = await createShareCard(name, my.time||0, my.moves||0);
 
-  // coba Web Share Level 2 (beberapa browser mendukung share file)
-  const shareData = {
-    title: 'Puzzle Slide',
-    text: `I just played Puzzle Slide!\nBest time: ${fmt(my.time||0)} • Moves: ${my.moves||0}\nCan you beat me?`,
-    url: location.origin
-  };
+  // ambil skor terbaik user dari local leaderboard
+  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
+  const my = board.find(e => e.name === name) || { time: 0, moves: 0 };
+  const rank = Math.max(1, board.findIndex(e => e.name === name) + 1);
+
+  // buat kartu gambar
+  const cardBlob = await createShareCard(name, my.time || 0, my.moves || 0);
+  const file = blobToFile(cardBlob, 'puzzle-score.png');
+
+  // caption singkat
+  const caption =
+    `👑 ${name} just solved RedStone Puzzle!\n` +
+    `Rank #${rank} • ⏳ ${fmt(my.time || 0)} • 🧩 ${my.moves || 0} moves\n` +
+    `Can you beat this?`;
+
+  // Web Share Level 2 (mobile/desktop yg support) — mengirim GAMBAR langsung ke composer
   try{
-    if (navigator.canShare && card && navigator.canShare({files:[blobToFile(card, 'score.png')]})){
-      shareData.files = [blobToFile(card, 'score.png')];
-      await navigator.share(shareData);
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      await navigator.share({
+        title: 'RedStone Puzzle',
+        text: caption,
+        files: [file],
+        url: location.origin
+      });
       return;
     }
-  }catch{}
+  } catch(e){
+    // lanjut ke fallback
+  }
 
-  // fallback: buka composer X dengan teks + url (tanpa gambar ter-upload otomatis)
-  const text = `I just played Puzzle Slide! Best time: ${fmt(my.time||0)} • Moves: ${my.moves||0}`;
-  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('Puzzle,Game')}`;
-  window.open(shareUrl,'_blank','noopener,noreferrer');
+  // Fallback: intent tweet (tanpa gambar terlampir otomatis)
+  const shareUrl =
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('Puzzle,Game,RedStone')}`;
+  window.open(shareUrl, '_blank', 'noopener,noreferrer');
 }
+
 
 /* ===== Events ===== */
 saveNameBtn.onclick = ()=>{
@@ -498,7 +512,7 @@ window.addEventListener('keydown', e=>{
   if (target>=0) move(target);
 });
 
-shareBtn.onclick = ()=> shareOnX(st.username || 'Anon');
+shareBtn.onclick = () => shareOnX(st.username || 'Anon');
 
 
 /* ===== Win handler ===== */
