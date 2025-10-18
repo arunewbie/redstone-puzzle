@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Puzzle Slide</title>
+<link rel="icon" type="image/svg+xml" href="/images/logo-redstone.svg">
+<style>
+  :root{--primary:#ff1e00;--bg:#0b0b0f;--muted:#9aa0a6;--card:#13141a}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;background:url('/images/redstone-bg.png') center/cover fixed no-repeat;}
+  body::before{content:'';position:fixed;inset:0;backdrop-filter:blur(8px);background:rgba(0,0,0,.45)}
+  header{text-align:center;padding:22px 16px 6px;position:relative;z-index:1}
+  h1{color:#fff;margin:0;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;text-shadow:0 0 10px rgba(255,255,255,.25)}
+  .title-logo{height:40px}
+  .sub{color:var(--muted);font-size:14px}
+  .wrap{position:relative;z-index:1;max-width:1080px;margin:20px auto;padding:0 16px;display:grid;grid-template-columns:1fr 360px;gap:18px}
+  @media (max-width:960px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid #1e2027;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .game{padding:16px}
+  .board{display:flex;justify-content:center;align-items:center;padding:8px}
+  canvas{width:100%;max-width:560px;aspect-ratio:1/1;height:auto;background:#0b0c12;border:1px solid #242633;border-radius:14px;display:block}
+  .side{padding:16px;display:grid;gap:12px}
+  .panel{background:#0f1117;border:1px solid #1f232d;border-radius:14px;padding:14px}
+  .panel h3{margin:0 0 8px;color:#e8eaee;font-size:15px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  select,button,input{border-radius:12px;border:1px solid #2a2f3a;background:#1d212b;color:#fff;padding:10px 12px}
+  button{background:var(--primary);border:none;font-weight:700;cursor:pointer}
+  button.secondary{background:#1d212b;border:1px solid #2a2f3a}
+  .badges{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+  .badge{background:#191b22;border:1px solid #252830;color:#d5d7dc;font-size:13px;border-radius:999px;padding:6px 10px}
+  .ok{color:#66ef9a}
+  .muted{color:#9aa0a6}
+  .footer{color:#9aa0a6;text-align:center;padding:16px;position:relative;z-index:1}
+</style>
+</head>
+<body>
+<header>
+  <h1><img class="title-logo" src="/images/logo-redstone.svg" alt=""><span>Puzzle Slide</span></h1>
+  <div class="sub">Geser ubin untuk menyusun gambar utuh. Klik/tap ubin yang bersebelahan dengan ruang kosong.</div>
+</header>
+<main class="wrap">
+  <section class="card game">
+    <div class="board">
+      <canvas id="board" width="560" height="560"></canvas>
+    </div>
+    <div class="badges">
+      <div class="badge">Moves: <b id="moves">0</b></div>
+      <div class="badge">Time: <b id="time">00:00</b></div>
+      <div class="badge">Grid: <b id="gridLabel">4×4</b></div>
+      <div class="badge">Status: <b id="status" class="muted">Playing…</b></div>
+    </div>
+  </section>
+  <aside class="card side">
+    <div class="panel">
+      <h3>Image</h3>
+      <div class="row">
+        <select id="imageSelect">
+          <option value="alex1.png">alex1.png</option>
+          <option value="alex2.png">alex2.png</option>
+          <option value="morgana.png">morgana.png</option>
+          <option value="redstone.png">redstone.png</option>
+        </select>
+        <button id="reload" class="secondary">Load</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Grid</h3>
+      <div class="row">
+        <select id="grid">
+          <option value="3">3 × 3 (easy)</option>
+          <option value="4" selected>4 × 4 (classic)</option>
+          <option value="5">5 × 5 (hard)</option>
+        </select>
+        <button id="shuffle">Shuffle</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Controls</h3>
+      <div class="row">
+        <button id="newGame">New Game</button>
+        <button id="solve" class="secondary">Preview</button>
+      </div>
+    </div>
+  </aside>
+</main>
+<div class="footer">© Puzzle Slide Game</div>
+<script>
+// puzzle script
+const canvas=document.getElementById('board'),ctx=canvas.getContext('2d');
+const movesEl=document.getElementById('moves'),timeEl=document.getElementById('time'),gridLabel=document.getElementById('gridLabel'),statusEl=document.getElementById('status');
+const imgSel=document.getElementById('imageSelect'),reloadBtn=document.getElementById('reload'),gridSel=document.getElementById('grid'),shuffleBtn=document.getElementById('shuffle'),newBtn=document.getElementById('newGame'),solveBtn=document.getElementById('solve');
+const IMAGE_BASE='/images/';
+let img=null;const st={n:4,tiles:[],moves:0,empty:0,timer:null,start:0};
+function fmt(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),ss=s%60;return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0')}
+function startTimer(){stopTimer();st.start=Date.now();st.timer=setInterval(()=>timeEl.textContent=fmt(Date.now()-st.start),250)}
+function stopTimer(){if(st.timer){clearInterval(st.timer);st.timer=null}}
+function shuffleSolvable(steps=200){const n=st.n,N=n*n;st.tiles=Array.from({length:N},(_,i)=>i);st.empty=N-1;let last=-1;for(let k=0;k<steps;k++){const e=st.empty,r=Math.floor(e/n),c=e%n;const opt=[];if(r>0)opt.push(e-n);if(r<n-1)opt.push(e+n);if(c>0)opt.push(e-1);if(c<n-1)opt.push(e+1);const filtered=opt.filter(x=>x!==last);const next=(filtered.length?filtered:opt)[Math.floor(Math.random()*(filtered.length?filtered.length:opt.length))];swap(e,next);last=e;st.empty=next}st.moves=0;movesEl.textContent='0';statusEl.textContent='Playing…';statusEl.classList.remove('ok')}
+function swap(a,b){const t=st.tiles[a];st.tiles[a]=st.tiles[b];st.tiles[b]=t}
+function isSolved(){return st.tiles.every((v,i)=>v===i)}
+function loadImage(n){return new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=IMAGE_BASE+n+'?v='+Date.now()})}
+function draw(){const n=st.n,N=n*n,tW=canvas.width/n,tH=canvas.height/n;ctx.clearRect(0,0,canvas.width,canvas.height);for(let i=0;i<N;i++){const val=st.tiles[i];const r=Math.floor(i/n),c=i%n;if(val===N-1){ctx.fillStyle='#0b0c12';ctx.fillRect(c*tW,r*tH,tW,tH);continue}const sR=Math.floor(val/n),sC=val%n;ctx.drawImage(img,sC*(img.width/n),sR*(img.height/n),img.width/n,img.height/n,c*tW,r*tH,tW,tH);ctx.strokeStyle='rgba(255,255,255,.075)';ctx.strokeRect(c*tW+0.5,r*tH+0.5,tW-1,tH-1)}}
+function posToIdx(x,y){const n=st.n,rect=canvas.getBoundingClientRect(),cx=(x-rect.left)*(canvas.width/rect.width),cy=(y-rect.top)*(canvas.height/rect.height),col=Math.floor(cx/(canvas.width/n)),row=Math.floor(cy/(canvas.height/n));return col<0||row<0||col>=n||row>=n?-1:row*n+col}
+function canMove(i){const n=st.n,e=st.empty;const sr=Math.floor(i/n),sc=i%n,er=Math.floor(e/n),ec=e%n;return Math.abs(sr-er)+Math.abs(sc-ec)===1}
+function move(i){if(canMove(i)){swap(i,st.empty);st.empty=i;st.moves++;movesEl.textContent=st.moves;draw();if(isSolved()){stopTimer();statusEl.textContent='Solved!';statusEl.classList.add('ok')}}}
+canvas.addEventListener('click',e=>{const i=posToIdx(e.clientX,e.clientY);if(i>=0)move(i)});
+canvas.addEventListener('touchend',e=>{const t=e.changedTouches[0],i=posToIdx(t.clientX,t.clientY);if(i>=0)move(i)},{passive:true});
+window.addEventListener('keydown',e=>{const n=st.n,eIdx=st.empty;let t=-1;const r=Math.floor(eIdx/n),c=eIdx%n;if(e.key==='ArrowUp'&&r<n-1)t=eIdx+n;if(e.key==='ArrowDown'&&r>0)t=eIdx-n;if(e.key==='ArrowLeft'&&c<n-1)t=eIdx+1;if(e.key==='ArrowRight'&&c>0)t=eIdx-1;if(t>=0)move(t)});
+gridSel.addEventListener('change',()=>{st.n=parseInt(gridSel.value,10);gridLabel.textContent=`${st.n}×${st.n}`;if(img){shuffleSolvable();draw();startTimer()}});
+reloadBtn.addEventListener('click',async()=>{img=await loadImage(imgSel.value);if(!img)return;shuffleSolvable();draw();startTimer()});
+shuffleBtn.addEventListener('click',()=>{if(img){shuffleSolvable();draw();startTimer()}});
+newBtn.addEventListener('click',async()=>{if(!img){img=await loadImage(imgSel.value);if(!img)return;}shuffleSolvable();draw();startTimer()});
+solveBtn.addEventListener('click',()=>{if(!img)return;const n=st.n,N=n*n;st.tiles=Array.from({length:N},(_,i)=>i);st.empty=N-1;draw();stopTimer();statusEl.textContent='Preview';statusEl.classList.add('ok')});
+(async()=>{img=await loadImage(imgSel.value);if(img){shuffleSolvable();draw();startTimer()}})();
+</script>
+</body>
+</html>
