@@ -527,14 +527,16 @@ shareBtn.onclick = () => shareOnX(st.username || 'Anon');
 
 
   // ===== Leaderboard (remote via /api/leaderboard) + fallback lokal =====
-async function saveScore(name, ms, moves){
-  try{
-    const res = await fetch('/api/leaderboard', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name: name || 'Anon', time: ms, moves })
-    });
-    if(!res.ok){
+async function saveScoreToServer(name, ms, moves){
+  const res = await fetch('/api/leaderboard', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name, time: ms, moves })
+  });
+  if (!res.ok) throw new Error('submit failed');
+  return res.json();
+}
+
       // fallback lokal kalau server gagal
       let board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
       board.push({ name: name||'Anon', time: ms, moves });
@@ -580,33 +582,53 @@ async function renderLeaderboard(){
 
 
 /* ===== Win handler ===== */
-function onWin(){
+async function onWin(){
   stopTimer();
   statusEl.textContent='Solved!';
   statusEl.classList.add('ok');
   confettiBurst();
 
-  const elapsed = Date.now() - st.startedAt;
-  const name = st.username || 'Anon';
+  const elapsed = Date.now() - st.startedAt;   // ms
+  const name = (st.username || 'Anon').trim() || 'Anon';
 
-  // kirim ke /api/leaderboard (fallback ke lokal kalau error)
-  saveScore(name, elapsed, st.moves);
+  try {
+    await saveScoreToServer(name, elapsed, st.moves);
+    await renderLeaderboard();  // refresh list setelah submit
+  } catch(e){
+    console.error(e);
+    alert('Gagal simpan skor. Coba lagi.');
+  }
 }
 
 
+
 /* ===== Init ===== */
-renderLeaderboard();
-(async function init(){
-  const loaded = await loadImage(imageSelect.value);
-  if (loaded){
-    img = loaded;
-    shuffleSolvable(300);
-    draw();
-    statusEl.textContent = 'Playing…';
-    startTimer();
-  } else {
-    statusEl.textContent = 'Select image & Load';
+async function renderLeaderboard(){
+  const el = document.getElementById('leaderboard');
+  el.innerHTML = 'Loading...';
+  try{
+    const list = await fetch('/api/leaderboard').then(r=>r.json());
+    el.innerHTML = '';
+    list.forEach((e,i)=>{
+      const row = document.createElement('div');
+      row.className = 'leader';
+      row.innerHTML =
+        `<span>${i===0?'👑 ':''}${i+1}. ${e.name}</span>
+         <span>${formatTime(e.time)} • ${e.moves} mv</span>`;
+      el.appendChild(row);
+    });
+    if(list.length===0) el.innerHTML = '<div class="muted">Belum ada skor</div>';
+  }catch(err){
+    el.innerHTML = '<div class="muted">Gagal memuat leaderboard</div>';
+    console.error(err);
   }
+}
+
+function formatTime(ms){
+  const s = Math.floor(ms/1000), m = Math.floor(s/60), ss = s%60;
+  return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+}
+
 })();
 </script>
 </body>
