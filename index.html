@@ -96,7 +96,22 @@
           <option value="redstonelogo.png">RedStone logo</option>
           <option value="stoney.png">Stoney</option>
           </select>
-          <button id="reload" class="secondary">Load</button>
+
+          imageSelect.addEventListener('change', async ()=>{
+  const selected = imageSelect.value;
+  const loaded = await loadImage(selected);
+  if (!loaded) {
+    alert('Image not found: '+selected);
+    return;
+  }
+  img = loaded;
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw();
+  startTimer();
+  statusEl.textContent = 'Playing…';
+});
+
+        
         </div>
       </div>
 
