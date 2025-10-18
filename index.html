@@ -426,30 +426,41 @@ saveNameBtn.onclick = ()=>{
 gridSelect.addEventListener('change', ()=>{
   st.n = parseInt(gridSelect.value,10);
   gridLabel.textContent = `${st.n}×${st.n}`;
-  if (img){ shuffleSolvable(Math.max(200, st.n*st.n*30)); draw(); startTimer(); }
+  if (img){ 
+    setSolvedLayout();                  // tampil utuh, timer belum jalan
+  }
 });
 
 reloadBtn.addEventListener('click', async ()=>{
   const loaded = await loadImage(imageSelect.value);
   if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
   img = loaded;
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  setSolvedLayout();                    // tampil utuh (no shuffle, no timer)
+  statusEl.textContent = 'Ready';
 });
 
-shuffleBtn.addEventListener('click', ()=>{
-  if (!img) return;
+/* Tombol Start Game (bukan Shuffle) */
+const startBtn = document.getElementById('startBtn'); // pastikan id tombol di HTML: startBtn
+startBtn.addEventListener('click', async ()=>{
+  if (!img){
+    const loaded = await loadImage(imageSelect.value);
+    if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
+    img = loaded;
+  }
   shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  draw();
+  statusEl.textContent = 'Shuffled — make your first move!';
+  // ⛔️ JANGAN startTimer di sini. Timer mulai setelah swap pertama (lihat move()).
 });
 
 newBtn.addEventListener('click', async ()=>{
   if (!img){
-    img = await loadImage(imageSelect.value);
-    if (!img){ alert('Image not found: '+imageSelect.value); return; }
+    const loaded = await loadImage(imageSelect.value);
+    if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
+    img = loaded;
   }
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  setSolvedLayout();                    // reset ke kondisi utuh
+  statusEl.textContent = 'Ready';
 });
 
 canvas.addEventListener('click', e=>{
@@ -457,18 +468,20 @@ canvas.addEventListener('click', e=>{
   const i = posToIdx(e.clientX, e.clientY);
   if (i>=0) move(i);
 });
+
 canvas.addEventListener('touchend', e=>{
   if (!img) return;
   const t = e.changedTouches[0];
   const i = posToIdx(t.clientX, t.clientY);
   if (i>=0) move(i);
 },{passive:true});
+
 window.addEventListener('keydown', e=>{
   if (!img) return;
   const n = st.n, eIdx = st.empty;
   let target = -1;
   const r = Math.floor(eIdx/n), c = eIdx % n;
-  if (e.key==='ArrowUp' && r<n-1)   target = eIdx + n;
+  if (e.key==='ArrowUp'   && r<n-1) target = eIdx + n;
   if (e.key==='ArrowDown' && r>0)   target = eIdx - n;
   if (e.key==='ArrowLeft' && c<n-1) target = eIdx + 1;
   if (e.key==='ArrowRight'&& c>0)   target = eIdx - 1;
@@ -476,6 +489,19 @@ window.addEventListener('keydown', e=>{
 });
 
 shareBtn.onclick = ()=> shareOnX(st.username || 'Anon');
+
+/* ===== Win handler ===== */
+function onWin(){
+  stopTimer();
+  statusEl.textContent='Solved!';
+  statusEl.classList.add('ok');
+  confettiBurst();
+
+  const elapsed = Date.now() - st.startedAt;
+  const name = st.username || 'Anon';
+  saveScore(name, elapsed, st.moves);
+}
+
 
 /* ===== Win handler ===== */
 function onWin(){
