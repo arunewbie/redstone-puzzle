@@ -474,11 +474,7 @@ saveNameBtn.onclick = ()=>{
   playerLabel.textContent = st.username;
 };
 
-gridSelect.addEventListener('change', ()=>{
-  st.n = parseInt(gridSelect.value,10);
-  gridLabel.textContent = `${st.n}×${st.n}`;
-  if (img){ shuffleSolvable(Math.max(200, st.n*st.n*30)); draw(); startTimer(); }
-});
+
 
 reloadBtn.addEventListener('click', async ()=>{
   const loaded = await loadImage(imageSelect.value);
