@@ -52,7 +52,7 @@
 </head>
 <body>
   <header>
-    <h1><img class="title-logo" src="/images/logo-redstone.svg" alt=""><span>RedStone Puzzle Game</span></h1>
+    <h1><img class="title-logo" src="/images/logo-redstone.svg" alt=""><span>Puzzle Slide</span></h1>
     <div class="sub">Drag the tiles to complete the image. Click/tap on the tiles next to the empty space.</div>
   </header>
 
@@ -96,10 +96,7 @@
           <option value="redstonelogo.png">RedStone logo</option>
           <option value="stoney.png">Stoney</option>
           </select>
- 
-        
-
-        
+          <button id="reload" class="secondary">Load</button>
         </div>
       </div>
 
@@ -150,25 +147,7 @@ const playerLabel = document.getElementById('playerLabel');
 const usernameInput = document.getElementById('username');
 const saveNameBtn   = document.getElementById('saveName');
 
-
-  const imageSelect = document.getElementById('imageSelect');
-
-imageSelect.addEventListener('change', async ()=>{
-  const selected = imageSelect.value;
-  const loaded = await loadImage(selected);
-  if (!loaded) {
-    alert('Image not found: '+selected);
-    return;
-  }
-  img = loaded;
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw();
-  startTimer();
-  statusEl.textContent = 'Playing…';
-});
-
-
-
+const imageSelect = document.getElementById('imageSelect');
 const reloadBtn   = document.getElementById('reload');
 const gridSelect  = document.getElementById('grid');
 const shuffleBtn  = document.getElementById('shuffle');
