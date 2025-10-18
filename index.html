@@ -432,6 +432,7 @@ async function shareOnX(username) {
   const file = blobToFile(cardBlob, 'puzzle-score.png');
 
   const caption =
+    '@r@redstone_defi'
     `👑 ${name} just solved RedStone Puzzle!\n` +
     `Rank #${rank} • ⏳ ${fmt(my.time || 0)} • 🧩 ${my.moves || 0} moves\n` +
     `Can you beat this?`;
