@@ -156,12 +156,16 @@ const saveNameBtn   = document.getElementById('saveName');
 imageSelect.addEventListener('change', async ()=>{
   const selected = imageSelect.value;
   const loaded = await loadImage(selected);
-  if (!loaded) { alert('Image not found: '+selected); return; }
+  if (!loaded) {
+    alert('Image not found: '+selected);
+    return;
+  }
   img = loaded;
-  fullPreview.src = IMAGE_BASE + selected;
-  setSolvedLayout();              // ← tampil utuh dulu
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw();
+  startTimer();
+  statusEl.textContent = 'Playing…';
 });
-
 
 
 
@@ -499,17 +503,17 @@ function onWin(){
 /* ===== Init ===== */
 renderLeaderboard();
 (async function init(){
-  const selected = imageSelect.value;
-  const loaded = await loadImage(selected);
+  const loaded = await loadImage(imageSelect.value);
   if (loaded){
     img = loaded;
-    fullPreview.src = IMAGE_BASE + selected;
-    setSolvedLayout();            // ← tidak diacak saat load
+    shuffleSolvable(300);
+    draw();
+    statusEl.textContent = 'Playing…';
+    startTimer();
   } else {
-    statusEl.textContent = 'Select image';
+    statusEl.textContent = 'Select image & Load';
   }
 })();
-
 </script>
 </body>
 </html>
