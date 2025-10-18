@@ -250,22 +250,24 @@ function canMove(i){
 }
 
 function move(i){
-  if (canMove(i)){
-    // start timer otomatis saat langkah pertama
-    if (!st.timer && !st.startedAt){
-      startTimer();
-      statusEl.textContent = 'Playing…';
-    }
+  if (!canMove(i)) return;
 
-    swap(i, st.empty);
-    st.empty = i;
-    st.moves++;
-    movesEl.textContent = st.moves;
-    draw();
+  // lakukan perpindahan dulu
+  swap(i, st.empty);
+  st.empty = i;
 
-    if (isSolved()){
-      onWin();
-    }
+  // mulai timer HANYA saat langkah efektif pertama
+  if (!st.timer && !st.startedAt && st.moves === 0){
+    startTimer();
+    statusEl.textContent = 'Playing…';
+  }
+
+  st.moves++;
+  movesEl.textContent = st.moves;
+  draw();
+
+  if (isSolved()){
+    onWin();
   }
 }
 
