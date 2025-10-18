@@ -71,6 +71,20 @@
       </div>
     </section>
 
+  <!-- Preview utuh di sebelah kiri -->
+  <div class="preview-wrap">
+    <div class="preview-label">Preview</div>
+    <div class="preview-inner">
+      <img id="fullPreview" src="/images/redstone.png" alt="full preview">
+    </div>
+  </div>
+
+  <!-- Kanvas puzzle (tidak berubah) -->
+  <canvas id="board" width="560" height="560"></canvas>
+  <!-- kalau kamu pakai canvas efek (fx), letakkan setelah board ini -->
+</div>
+
+
     <aside class="card side">
       <div class="panel">
         <h3>Player</h3>
@@ -102,6 +116,61 @@
         
         </div>
       </div>
+
+      /* layout board: preview kiri, puzzle kanan */
+.board {
+  display: grid;
+  grid-template-columns: 220px 1fr; /* preview 220px, puzzle fleksibel */
+  gap: 14px;
+  align-items: center;
+}
+
+/* responsive: tumpuk saat layar kecil */
+@media (max-width: 720px) {
+  .board { grid-template-columns: 1fr; }
+}
+
+/* kotak preview dengan border keren */
+.preview-wrap {
+  position: relative;
+  border-radius: 14px;
+  padding: 2px;                 /* “ketebalan” border */
+  background:
+    conic-gradient(from 180deg at 50% 50%,
+      #ff1e00, #ffd166, #66ef9a, #66a0ff, #ffffff, #ff1e00);
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+/* inner background gelap agar border terlihat */
+.preview-inner {
+  border-radius: 12px;
+  background: #0f1117;
+  border: 1px solid #1f232d;
+  overflow: hidden;
+}
+
+/* gambar preview */
+#fullPreview {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;    /* cropped rapi jadi kotak */
+}
+
+/* label kecil di pojok */
+.preview-label {
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  background: rgba(0,0,0,.55);
+  border: 1px solid #2a2f3a;
+  color: #e8eaee;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
 
       <div class="panel">
         <h3>Grid</h3>
