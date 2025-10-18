@@ -135,7 +135,7 @@
   <div class="footer">© RedStone Puzzle Game by arunewbie </div>
 
 <script>
-/* ========= DOM ========= */
+/* ====== Core Sliding Puzzle with username + timer + leaderboard + share + win FX ====== */
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const fx = document.getElementById('fx');
@@ -153,67 +153,35 @@ const saveNameBtn   = document.getElementById('saveName');
 
 const imageSelect = document.getElementById('imageSelect');
 const reloadBtn   = document.getElementById('reload');
-const shuffleBtn  = document.getElementById('shuffle');   // <- tombol Start/Shuffle
+const gridSelect  = document.getElementById('grid');
+const shuffleBtn  = document.getElementById('shuffle');
 const newBtn      = document.getElementById('newGame');
 const shareBtn    = document.getElementById('shareX');
 
-const previewBtn = document.getElementById('previewBtn');
-const previewContainer = document.getElementById('previewContainer');
-const previewImage = document.getElementById('previewImage');
-
-/* ========= STATE ========= */
 const IMAGE_BASE = '/images/';
 let img = null;
 
 const st = {
-  n: 3,
+  n: 4,
   tiles: [],
-  empty: 0,
   moves: 0,
+  empty: 0,
   timer: null,
-  startedAt: 0,     // 0 = belum mulai
-  username: localStorage.getItem('ps_username') || 'Anon',
+  startedAt: 0,
+  username: localStorage.getItem('ps_username') || '',
 };
 
-playerLabel.textContent = st.username || 'Anon';
+playerLabel.textContent = st.username || '—';
 if (st.username) usernameInput.value = st.username;
 
-/* ========= UTIL ========= */
 function fmt(ms){
   const s = Math.floor(ms/1000), m = Math.floor(s/60), ss = s % 60;
-  return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+  return String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
 }
-function startTimer(){
-  stopTimer();
-  st.startedAt = Date.now();
-  st.timer = setInterval(()=> timeEl.textContent = fmt(Date.now() - st.startedAt), 250);
-}
-function stopTimer(){ if(st.timer){ clearInterval(st.timer); st.timer = null; } }
+function startTimer(){ stopTimer(); st.startedAt = Date.now(); st.timer = setInterval(()=>{ timeEl.textContent = fmt(Date.now() - st.startedAt); }, 250); }
+function stopTimer(){ if(st.timer){ clearInterval(st.timer); st.timer=null; } }
 
-function loadImage(name){
-  return new Promise((resolve)=>{
-    const image = new Image();
-    image.onload = ()=>resolve(image);
-    image.onerror = ()=>resolve(null);
-    image.src = IMAGE_BASE + name + `?v=${Date.now()}`;
-  });
-}
-
-function resetOrderedBoard(){
-  const N = st.n*st.n;
-  st.tiles = Array.from({length:N}, (_,i)=>i);
-  st.empty = N-1;
-  st.moves = 0;
-  movesEl.textContent = '0';
-  timeEl.textContent = '00:00';
-  stopTimer();
-  st.startedAt = 0;               // tandai belum mulai
-  statusEl.textContent = 'Ready';
-  statusEl.classList.remove('ok');
-  draw();
-}
-
-function shuffleSolvable(steps = 200){
+function shuffleSolvable(steps=200){
   const n = st.n, N = n*n;
   st.tiles = Array.from({length:N}, (_,i)=>i);
   st.empty = N-1;
@@ -225,9 +193,10 @@ function shuffleSolvable(steps = 200){
     if (r<n-1) opt.push(e+n);
     if (c>0) opt.push(e-1);
     if (c<n-1) opt.push(e+1);
-    const pool = (opt.filter(x=>x!==last).length ? opt.filter(x=>x!==last) : opt);
+    const filtered = opt.filter(x=>x!==last);
+    const pool = filtered.length ? filtered : opt;
     const next = pool[Math.floor(Math.random()*pool.length)];
-    const t = st.tiles[e]; st.tiles[e]=st.tiles[next]; st.tiles[next]=t;
+    swap(e,next);
     last = e;
     st.empty = next;
   }
@@ -238,37 +207,44 @@ function shuffleSolvable(steps = 200){
   statusEl.classList.remove('ok');
 }
 
+function swap(a,b){ const t = st.tiles[a]; st.tiles[a]=st.tiles[b]; st.tiles[b]=t; }
+function isSolved(){ return st.tiles.every((v,i)=>v===i); }
+
+function loadImage(name){
+  return new Promise((resolve)=>{
+    const image = new Image();
+    image.onload = ()=>resolve(image);
+    image.onerror = ()=>resolve(null);
+    image.src = IMAGE_BASE + name + `?v=${Date.now()}`;
+  });
+}
+
 function draw(){
   const n = st.n, N = n*n, tW = canvas.width/n, tH = canvas.height/n;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if (!img) return;
   for (let i=0;i<N;i++){
     const val = st.tiles[i];
     const r = Math.floor(i/n), c = i % n;
     if (val === N-1){
-      // petak kosong
-      ctx.fillStyle = '#0b0c12';
+      ctx.fillStyle='#0b0c12';
       ctx.fillRect(c*tW, r*tH, tW, tH);
       continue;
     }
     const sR = Math.floor(val/n), sC = val % n;
-    ctx.drawImage(
-      img,
-      sC*(img.width/n),  sR*(img.height/n),  img.width/n, img.height/n,
-      c*tW,              r*tH,               tW,          tH
-    );
-    ctx.strokeStyle = 'rgba(255,255,255,.075)';
+    ctx.drawImage(img, sC*(img.width/n), sR*(img.height/n), img.width/n, img.height/n, c*tW, r*tH, tW, tH);
+    ctx.strokeStyle='rgba(255,255,255,.075)';
     ctx.strokeRect(c*tW+0.5, r*tH+0.5, tW-1, tH-1);
   }
 }
 
 function posToIdx(x,y){
+  const n = st.n;
   const rect = canvas.getBoundingClientRect();
-  const nx = (x-rect.left)*(canvas.width/rect.width);
-  const ny = (y-rect.top)*(canvas.height/rect.height);
-  const col = Math.floor(nx/(canvas.width/st.n));
-  const row = Math.floor(ny/(canvas.height/st.n));
-  return (col<0||row<0||col>=st.n||row>=st.n) ? -1 : row*st.n + col;
+  const cx = (x-rect.left)*(canvas.width/rect.width);
+  const cy = (y-rect.top)*(canvas.height/rect.height);
+  const col = Math.floor(cx/(canvas.width/n));
+  const row = Math.floor(cy/(canvas.height/n));
+  return (col<0||row<0||col>=n||row>=n) ? -1 : row*n + col;
 }
 
 function canMove(i){
@@ -278,24 +254,15 @@ function canMove(i){
 }
 
 function move(i){
-  if (!canMove(i)) return;
-
-  // swap
-  const t = st.tiles[i]; st.tiles[i]=st.tiles[st.empty]; st.tiles[st.empty]=t;
-  st.empty = i;
-
-  // Mulai timer saat langkah efektif pertama
-  if (!st.timer && st.startedAt===0 && st.moves===0){
-    startTimer();
-    statusEl.textContent = 'Playing…';
-  }
-
-  st.moves++;
-  movesEl.textContent = st.moves;
-  draw();
-
-  if (st.tiles.every((v,idx)=>v===idx)){
-    onWin();
+  if (canMove(i)){
+    swap(i, st.empty);
+    st.empty = i;
+    st.moves++;
+    movesEl.textContent = st.moves;
+    draw();
+    if (isSolved()){
+      onWin();
+    }
   }
 }
 
