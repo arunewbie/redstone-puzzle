@@ -289,30 +289,43 @@ function move(i){
 }
 
 
-/* ===== Leaderboard (local) ===== */
-function saveScore(username, ms, moves){
-  let board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
-  board.push({ name: username || 'Anon', time: ms, moves, date: Date.now() });
-  // sort by best time asc, then moves asc
-  board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves) );
-  board = board.slice(0, 10);
-  localStorage.setItem('ps_leaderboard', JSON.stringify(board));
-  renderLeaderboard();
+/* ========= Leaderboard (API vercel) ========= */
+async function saveScoreToServer(name, ms, moves){
+  const res = await fetch('/api/leaderboard', {
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body: JSON.stringify({ name, time: ms, moves })
+  });
+  if (!res.ok) throw new Error('submit failed');
+  return res.json();
 }
-function renderLeaderboard(){
+
+async function fetchLeaderboard(){
+  try{
+    const res = await fetch('/api/leaderboard');
+    if(!res.ok) throw new Error('GET failed');
+    return await res.json(); // [{name,time,moves}, ...]
+  }catch{
+    // fallback baca localStorage jika perlu
+    return JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
+  }
+}
+
+async function renderLeaderboard(){
   const el = document.getElementById('leaderboard');
-  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
+  if(!el) return;
   el.innerHTML = '';
-  board.forEach((e,i)=>{
+  const data = await fetchLeaderboard();
+  (data||[]).forEach((e,i)=>{
     const row = document.createElement('div');
     row.className = 'leader';
-    const left = document.createElement('span');
-    left.innerHTML = `${i===0?'<span class="crown">👑</span>':''}${i+1}. ${e.name}`;
-    const right = document.createElement('span');
-    right.textContent = `${fmt(e.time)} • ${e.moves} mv`;
-    row.appendChild(left); row.appendChild(right);
+    row.innerHTML = `<span>${i===0?'👑 ':''}${i+1}. ${e.name||'Anon'}</span>
+                     <span>${fmt(Number(e.time||0))} • ${Number(e.moves||0)} mv</span>`;
     el.appendChild(row);
   });
+  if (!data || data.length===0){
+    el.innerHTML = '<div class="muted">Belum ada skor</div>';
+  }
 }
 
 /* ===== Win FX (confetti simple + glow) ===== */
@@ -527,31 +540,41 @@ window.addEventListener('keydown', e=>{
 shareBtn.onclick = () => shareOnX(st.username || 'Anon');
 
 
-/* ===== Win handler ===== */
-function onWin(){
+
+/* ========= WIN HANDLER ========= */
+async function onWin(){
   stopTimer();
   statusEl.textContent='Solved!';
   statusEl.classList.add('ok');
   confettiBurst();
 
   const elapsed = Date.now() - st.startedAt;
-  const name = st.username || 'Anon';
-  saveScore(name, elapsed, st.moves);
+  const name = (st.username || 'Anon').trim() || 'Anon';
+
+  try{
+    await saveScoreToServer(name, elapsed, st.moves);
+  }catch(e){
+    // fallback local kalau API gagal
+    let board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
+    board.push({ name, time: elapsed, moves: st.moves, date: Date.now() });
+    board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves));
+    board = board.slice(0,10);
+    localStorage.setItem('ps_leaderboard', JSON.stringify(board));
+  }
+  renderLeaderboard();
 }
 
-/* ===== Init ===== */
-renderLeaderboard();
+/* ========= INIT ========= */
 (async function init(){
+  // load default image, tapi JANGAN shuffle
   const loaded = await loadImage(imageSelect.value);
   if (loaded){
     img = loaded;
-    shuffleSolvable(300);
-    draw();
-    statusEl.textContent = 'Playing…';
-    startTimer();
+    resetOrderedBoard();
   } else {
     statusEl.textContent = 'Select image & Load';
   }
+  await renderLeaderboard();
 })();
 </script>
 </body>
