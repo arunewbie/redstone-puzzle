@@ -6,132 +6,133 @@
 <title>RedStone Puzzle Game</title>
 <link rel="icon" type="image/svg+xml" href="/images/logo-redstone.svg">
 <style>
-  :root{--primary:#ff1e00;--bg:#0b0b0f;--muted:#9aa0a6;--card:#13141a}
-  *{box-sizing:border-box}
-  body{
-    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
-    background:url('/images/redstone-bg.png') center/cover fixed no-repeat;
-  }
-  body::before{content:'';position:fixed;inset:0;backdrop-filter:blur(8px);background:rgba(0,0,0,.45)}
-  header{position:relative;z-index:1;text-align:center;padding:22px 16px 6px}
-  h1{color:#fff;margin:0;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;text-shadow:0 0 10px rgba(255,255,255,.25)}
-  .title-logo{height:40px}
-  .sub{color:var(--muted);font-size:14px}
-  .wrap{position:relative;z-index:1;max-width:1080px;margin:20px auto;padding:0 16px;display:grid;grid-template-columns:1fr 360px;gap:18px}
-  @media (max-width:960px){.wrap{grid-template-columns:1fr}}
-  .card{background:var(--card);border:1px solid #1e2027;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-  .game{padding:16px}
-  .board{position:relative;display:flex;justify-content:center;align-items:center;padding:8px}
-  canvas#board{width:100%;max-width:560px;aspect-ratio:1/1;height:auto;background:#0b0c12;border:1px solid #242633;border-radius:14px;display:block}
-  canvas#fx{position:absolute;inset:8px;max-width:560px;aspect-ratio:1/1;border-radius:14px;pointer-events:none}
-  .side{padding:16px;display:grid;gap:12px}
-  .panel{background:#0f1117;border:1px solid #1f232d;border-radius:14px;padding:14px}
-  .panel h3{margin:0 0 8px;color:#e8eaee;font-size:15px}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  input,select,button{border-radius:12px;border:1px solid #2a2f3a;background:#1d212b;color:#fff;padding:10px 12px}
-  button{background:var(--primary);border:none;font-weight:700;cursor:pointer}
-  button.secondary{background:#1d212b;border:1px solid #2a2f3a}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  .badges{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
-  .badge{background:#191b22;border:1px solid #252830;color:#d5d7dc;font-size:13px;border-radius:999px;padding:6px 10px}
-  .ok{color:#66ef9a}
-  .muted{color:#9aa0a6}
-  .footer{color:#9aa0a6;text-align:center;padding:16px;position:relative;z-index:1}
-  /* leaderboard */
-  .list{display:grid;gap:6px;max-height:220px;overflow:auto}
-  .leader{display:flex;justify-content:space-between;border-bottom:1px solid #21242c;padding:6px 0;font-size:14px;color:#d5dae0}
-  .crown{margin-right:6px}
-  /* win glow */
-  .win-glow{animation:winGlow 1200ms ease-out 1}
-  @keyframes winGlow{
-    0%{box-shadow:0 0 0 rgba(255,255,255,0)}
-    30%{box-shadow:0 0 40px rgba(255,255,255,.35)}
-    100%{box-shadow:0 0 0 rgba(255,255,255,0)}
-  }
+  :root{--primary:#ff1e00;--bg:#0b0b0f;--muted:#9aa0a6;--card:#13141a}
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
+    background:url('/images/redstone-bg.png') center/cover fixed no-repeat;
+  }
+  body::before{content:'';position:fixed;inset:0;backdrop-filter:blur(8px);background:rgba(0,0,0,.45)}
+  header{position:relative;z-index:1;text-align:center;padding:22px 16px 6px}
+  h1{color:#fff;margin:0;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;text-shadow:0 0 10px rgba(255,255,255,.25)}
+  .title-logo{height:40px}
+  .sub{color:var(--muted);font-size:14px}
+  .wrap{position:relative;z-index:1;max-width:1080px;margin:20px auto;padding:0 16px;display:grid;grid-template-columns:1fr 360px;gap:18px}
+  @media (max-width:960px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid #1e2027;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .game{padding:16px}
+  .board{position:relative;display:flex;justify-content:center;align-items:center;padding:8px}
+  canvas#board{width:100%;max-width:560px;aspect-ratio:1/1;height:auto;background:#0b0c12;border:1px solid #242633;border-radius:14px;display:block}
+  canvas#fx{position:absolute;inset:8px;max-width:560px;aspect-ratio:1/1;border-radius:14px;pointer-events:none}
+  .side{padding:16px;display:grid;gap:12px}
+  .panel{background:#0f1117;border:1px solid #1f232d;border-radius:14px;padding:14px}
+  .panel h3{margin:0 0 8px;color:#e8eaee;font-size:15px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  input,select,button{border-radius:12px;border:1px solid #2a2f3a;background:#1d212b;color:#fff;padding:10px 12px}
+  button{background:var(--primary);border:none;font-weight:700;cursor:pointer}
+  button.secondary{background:#1d212b;border:1px solid #2a2f3a}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .badges{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+  .badge{background:#191b22;border:1px solid #252830;color:#d5d7dc;font-size:13px;border-radius:999px;padding:6px 10px}
+  .ok{color:#66ef9a}
+  .muted{color:#9aa0a6}
+  .footer{color:#9aa0a6;text-align:center;padding:16px;position:relative;z-index:1}
+  /* leaderboard */
+  .list{display:grid;gap:6px;max-height:220px;overflow:auto}
+  .leader{display:flex;justify-content:space-between;border-bottom:1px solid #21242c;padding:6px 0;font-size:14px;color:#d5dae0}
+  .crown{margin-right:6px}
+  /* win glow */
+  .win-glow{animation:winGlow 1200ms ease-out 1}
+  @keyframes winGlow{
+    0%{box-shadow:0 0 0 rgba(255,255,255,0)}
+    30%{box-shadow:0 0 40px rgba(255,255,255,.35)}
+    100%{box-shadow:0 0 0 rgba(255,255,255,0)}
+  }
 </style>
 </head>
 <body>
-  <header>
-    <h1><img class="title-logo" src="/images/logo-redstone.svg" alt=""><span>RedStone Puzzle Game</span></h1>
-    <div class="sub">Drag the tiles to complete the image. Click/tap on the tiles next to the empty space.</div>
-  </header>
+  <header>
+    <h1><img class="title-logo" src="/images/logo-redstone.svg" alt=""><span>RedStone Puzzle Game</span></h1>
+    <div class="sub">Drag the tiles to complete the image. Click/tap on the tiles next to the empty space.</div>
+  </header>
 
-  <main class="wrap">
-    <section class="card game">
-      <div class="board" id="boardWrap">
-        <canvas id="board" width="560" height="560"></canvas>
-        <canvas id="fx" width="560" height="560"></canvas>
-      </div>
-      <div class="badges">
-        <div class="badge">Player: <b id="playerLabel">—</b></div>
-        <div class="badge">Moves: <b id="moves">0</b></div>
-        <div class="badge">Time: <b id="time">00:00</b></div>
-        <div class="badge">Grid: <b id="gridLabel">3×3</b></div>
-        <div class="badge">Status: <b id="status" class="muted">Ready</b></div>
-      </div>
-    </section>
+  <main class="wrap">
+    <section class="card game">
+      <div class="board" id="boardWrap">
+        <canvas id="board" width="560" height="560"></canvas>
+        <canvas id="fx" width="560" height="560"></canvas>
+      </div>
+      <div class="badges">
+        <div class="badge">Player: <b id="playerLabel">—</b></div>
+        <div class="badge">Moves: <b id="moves">0</b></div>
+        <div class="badge">Time: <b id="time">00:00</b></div>
+        <div class="badge">Grid: <b id="gridLabel">3×3</b></div>
+        <div class="badge">Status: <b id="status" class="muted">Ready</b></div>
+      </div>
+    </section>
 
-    <aside class="card side">
-      <div class="panel">
-        <h3>Player</h3>
-        <div class="row">
-          <input id="username" placeholder="Your username..." />
-            <button id="saveName" class="secondary">Set</button>
+    <aside class="card side">
+      <div class="panel">
+        <h3>Player</h3>
+        <div class="row">
+          <input id="username" placeholder="Your username..." />
+            <button id="saveName" class="secondary">Set</button>
 
-        </div>
-      </div>
+        </div>
+      </div>
 
-      <div class="panel">
-        <h3>Image</h3>
-        <div class="row">
-          <select id="imageSelect">
-                         <option value="redstone1.png">RedStone1</option>
-          <option value="redstone2.png">RedStone2</option>
-          <option value="redstone3.png">RedStone3</option>
-          <option value="redstone4.png">RedStone4</option>
-          <option value="redstone5.png">RedStone5</option>
-          <option value="redstone6.png">RedStone6</option>
-          <option value="redstone7.png">RedStone7</option>
-          <option value="atom.png">RedStone atom</option>
-          <option value="redstonelogo.png">RedStone logo</option>
-          <option value="stoney.png">Stoney</option>
-          </select>
-          <button id="reload" class="secondary">Load</button>
-            <button id="previewBtn">Preview</button>
-  </div>
-  <div id="previewContainer" style="margin-top:10px; display:none;">
-    <img id="previewImage" src="" alt="Preview Image" style="width:100%;border-radius:10px;border:1px solid #2a2f3a;">
-  </div>
-          
-        </div>
-      </div>
+      <div class="panel">
+        <h3>Image</h3>
+        <div class="row">
+          <select id="imageSelect">
+            <!-- ganti sesuai aset kamu -->
+             <option value="redstone1.png">RedStone1</option>
+          <option value="redstone2.png">RedStone2</option>
+          <option value="redstone3.png">RedStone3</option>
+          <option value="redstone4.png">RedStone4</option>
+          <option value="redstone5.png">RedStone5</option>
+          <option value="redstone6.png">RedStone6</option>
+          <option value="redstone7.png">RedStone7</option>
+          <option value="atom.png">RedStone atom</option>
+          <option value="redstonelogo.png">RedStone logo</option>
+          <option value="stoney.png">Stoney</option>
+          </select>
+          <button id="reload" class="secondary">Load</button>
+            <button id="previewBtn">Preview</button>
+  </div>
+  <div id="previewContainer" style="margin-top:10px; display:none;">
+    <img id="previewImage" src="" alt="Preview Image" style="width:100%;border-radius:10px;border:1px solid #2a2f3a;">
+  </div>
+          
+        </div>
+      </div>
 
-     
-          <button id="shuffle">Shuffle</button>
-         
-        
-          
-        </div>
-      </div>
+     
+          <button id="shuffle">Shuffle</button>
+         
+        
+          
+        </div>
+      </div>
 
-      <div class="panel">
-        <h3>Controls</h3>
-        <div class="row">
-          <button id="newGame">New Game</button>
-         <button id="shareX" class="secondary">Share on X</button>
+      <div class="panel">
+        <h3>Controls</h3>
+        <div class="row">
+          <button id="newGame">New Game</button>
+         <button id="shareX" class="secondary">Share on X</button>
 <button onclick="previewShareCard()" class="secondary">Preview Card 🖼️</button>
-        </div>
-        <div class="muted" style="font-size:13px;margin-top:6px">Share Your Best Score to X.</div>
-      </div>
+        </div>
+        <div class="muted" style="font-size:13px;margin-top:6px">Share Your Best Score to X.</div>
+      </div>
 
-      <div class="panel">
-        <h3>🏆 Leaderboard (Best Time)</h3>
-        <div id="leaderboard" class="list"></div>
-      </div>
-    </aside>
-  </main>
+      <div class="panel">
+        <h3>🏆 Leaderboard (Best Time)</h3>
+        <div id="leaderboard" class="list"></div>
+      </div>
+    </aside>
+  </main>
 
-  <div class="footer">© RedStone Puzzle Game by arunewbie </div>
+  <div class="footer">© RedStone Puzzle Game by arunewbie </div>
 
 <script>
 /* ====== Core Sliding Puzzle with username + timer + leaderboard + share + win FX ====== */
@@ -142,122 +143,108 @@ const fxctx = fx.getContext('2d');
 const wrap = document.getElementById('boardWrap');
 
 const movesEl = document.getElementById('moves');
-const timeEl  = document.getElementById('time');
+const timeEl  = document.getElementById('time');
 const gridLabel = document.getElementById('gridLabel');
 const statusEl = document.getElementById('status');
 const playerLabel = document.getElementById('playerLabel');
 
 const usernameInput = document.getElementById('username');
-const saveNameBtn   = document.getElementById('saveName');
+const saveNameBtn   = document.getElementById('saveName');
 
 const imageSelect = document.getElementById('imageSelect');
-const reloadBtn   = document.getElementById('reload');
-const gridSelect  = document.getElementById('grid');
-const shuffleBtn  = document.getElementById('shuffle');
-const newBtn      = document.getElementById('newGame');
-const shareBtn    = document.getElementById('shareX');
+const reloadBtn   = document.getElementById('reload');
+const gridSelect  = document.getElementById('grid');
+const shuffleBtn  = document.getElementById('shuffle');
+const newBtn      = document.getElementById('newGame');
+const shareBtn    = document.getElementById('shareX');
 
 const IMAGE_BASE = '/images/';
 let img = null;
 
 const st = {
-  n: 3,
-  tiles: [],
-  moves: 0,
-  empty: 0,
-  timer: null,
-  startedAt: 0,
-  username: localStorage.getItem('ps_username') || '',
+  n: 3,
+  tiles: [],
+  moves: 0,
+  empty: 0,
+  timer: null,
+  startedAt: 0,
+  username: localStorage.getItem('ps_username') || '',
 };
 
 playerLabel.textContent = st.username || '—';
 if (st.username) usernameInput.value = st.username;
 
 function fmt(ms){
-  const s = Math.floor(ms/1000), m = Math.floor(s/60), ss = s % 60;
-  return String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+  const s = Math.floor(ms/1000), m = Math.floor(s/60), ss = s % 60;
+  return String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
 }
 function startTimer(){ stopTimer(); st.startedAt = Date.now(); st.timer = setInterval(()=>{ timeEl.textContent = fmt(Date.now() - st.startedAt); }, 250); }
 function stopTimer(){ if(st.timer){ clearInterval(st.timer); st.timer=null; } }
 
-function resetOrderedBoard(){
-  const n = st.n, N = n*n;
-  st.tiles = Array.from({length:N}, (_,i)=>i);
-  st.empty = N-1;
-  st.moves = 0;
-  stopTimer();
-  st.startedAt = 0;
-  movesEl.textContent = '0';
-  timeEl.textContent = '00:00';
-  statusEl.textContent = 'Ready';
-  statusEl.classList.remove('ok');
-  draw();
-}
-
 function shuffleSolvable(steps=200){
-  const n = st.n, N = n*n;
-  st.tiles = Array.from({length:N}, (_,i)=>i);
-  st.empty = N-1;
-  let last = -1;
-  for (let k=0;k<steps;k++){
-    const e = st.empty, r = Math.floor(e/n), c = e % n;
-    const opt = [];
-    if (r>0) opt.push(e-n);
-    if (r<n-1) opt.push(e+n);
-    if (c>0) opt.push(e-1);
-    if (c<n-1) opt.push(e+1);
-    const filtered = opt.filter(x=>x!==last);
-    const pool = filtered.length ? filtered : opt;
-    const next = pool[Math.floor(Math.random()*pool.length)];
-    swap(e,next);
-    last = e;
-    st.empty = next;
-  }
-  st.moves = 0;
-  movesEl.textContent = '0';
-  timeEl.textContent = '00:00';
-  statusEl.textContent = 'Playing…';
-  statusEl.classList.remove('ok');
+  const n = st.n, N = n*n;
+  st.tiles = Array.from({length:N}, (_,i)=>i);
+  st.empty = N-1;
+  let last = -1;
+  for (let k=0;k<steps;k++){
+    const e = st.empty, r = Math.floor(e/n), c = e % n;
+    const opt = [];
+    if (r>0) opt.push(e-n);
+    if (r<n-1) opt.push(e+n);
+    if (c>0) opt.push(e-1);
+    if (c<n-1) opt.push(e+1);
+    const filtered = opt.filter(x=>x!==last);
+    const pool = filtered.length ? filtered : opt;
+    const next = pool[Math.floor(Math.random()*pool.length)];
+    swap(e,next);
+    last = e;
+    st.empty = next;
+  }
+  st.moves = 0;
+  movesEl.textContent = '0';
+  timeEl.textContent = '00:00';
+  statusEl.textContent = 'Playing…';
+  statusEl.classList.remove('ok');
 }
 
 function swap(a,b){ const t = st.tiles[a]; st.tiles[a]=st.tiles[b]; st.tiles[b]=t; }
 function isSolved(){ return st.tiles.every((v,i)=>v===i); }
 
 function loadImage(name){
-  return new Promise((resolve)=>{
-    const image = new Image();
-    image.onload = ()=>resolve(image);
-    image.onerror = ()=>resolve(null);
-    image.src = IMAGE_BASE + name + `?v=${Date.now()}`;
-  });
+  return new Promise((resolve)=>{
+    const image = new Image();
+    image.onload = ()=>resolve(image);
+    image.onerror = ()=>resolve(null);
+    image.src = IMAGE_BASE + name + `?v=${Date.now()}`;
+  });
 }
 
 function draw(){
-  const n = st.n, N = n*n, tW = canvas.width/n, tH = canvas.height/n;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  for (let i=0;i<N;i++){
-    const val = st.tiles[i];
-    const r = Math.floor(i/n), c = i % n;
-    if (val === N-1){
-      ctx.fillStyle='#0b0c12';
-      ctx.fillRect(c*tW, r*tH, tW, tH);
-      continue;
-    }
-    const sR = Math.floor(val/n), sC = val % n;
-    ctx.drawImage(img, sC*(img.width/n), sR*(img.height/n), img.width/n, img.height/n, c*tW, r*tH, tW, tH);
-    ctx.strokeStyle='rgba(255,255,255,.075)';
-    ctx.strokeRect(c*tW+0.5, r*tH+0.5, tW-1, tH-1);
-  }
+  const n = st.n, N = n*n, tW = canvas.width/n, tH = canvas.height/n;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for (let i=0;i<N;i++){
+    const val = st.tiles[i];
+    const r = Math.floor(i/n), c = i % n;
+    if (val === N-1){
+      ctx.fillStyle='#0b0c12';
+      ctx.fillRect(c*tW, r*tH, tW, tH);
+      continue;
+    }
+    const sR = Math.floor(val/n), sC = val % n;
+    ctx.drawImage(img, sC*(img.width/n), sR*(img.height/n), img.width/n, img.height/n, c*tW, r*tH, tW, tH);
+    ctx.strokeStyle='rgba(255,255,255,.075)';
+    ctx.strokeRect(c*tW+0.5, r*tH+0.5, tW-1, tH-1);
+  }
 }
 
 function posToIdx(x,y){
-  const n = st.n;
-  const rect = canvas.getBoundingClientRect();
-  const cx = (x-rect.left)*(canvas.width/rect.width);
-  const cy = (y-rect.top)*(canvas.height/rect.height);
-  const col = Math.floor(cx/(canvas.width/n));
-  const row = Math.floor(cy/(canvas.height/n));
-  return (col<0||row<0||col>=n||row>=n) ? -1 : row*n + col;
+  const n = st.n;
+  const rect = canvas.getBoundingClientRect();
+  const cx = (x-rect.left)*(canvas.width/rect.width);
+  const cy = (y-rect.top)*(canvas.height/rect.height);
+  const col = Math.floor(cx/(canvas.width/n));
+  const row = Math.floor(cy/(canvas.height/n));
+  return (col<0||row<0||col>=n||row>=n) ? -1 : row*n + col;
 }
 
 
@@ -266,317 +253,288 @@ const previewContainer = document.getElementById('previewContainer');
 const previewImage = document.getElementById('previewImage');
 
 previewBtn.addEventListener('click', () => {
-  const imgName = imageSelect.value;
-  if (!imgName) return;
-  previewImage.src = IMAGE_BASE + imgName;
-  previewContainer.style.display = 'block';
+  const imgName = imageSelect.value;
+  if (!imgName) return;
+  previewImage.src = IMAGE_BASE + imgName;
+  previewContainer.style.display = 'block';
 });
 
-  
+  
 function canMove(i){
-  const n = st.n, e = st.empty;
-  const sr = Math.floor(i/n), sc = i%n, er = Math.floor(e/n), ec = e % n;
-  return Math.abs(sr-er) + Math.abs(sc-ec) === 1;
+  const n = st.n, e = st.empty;
+  const sr = Math.floor(i/n), sc = i%n, er = Math.floor(e/n), ec = e % n;
+  return Math.abs(sr-er) + Math.abs(sc-ec) === 1;
 }
 
 function move(i){
-  if (!canMove(i)) return;
+  if (!canMove(i)) return;
 
-  // lakukan perpindahan dulu
-  swap(i, st.empty);
-  st.empty = i;
+  // lakukan perpindahan dulu
+  swap(i, st.empty);
+  st.empty = i;
 
-  // mulai timer HANYA saat langkah efektif pertama
-  if (!st.timer && !st.startedAt && st.moves === 0){
-    startTimer();
-    statusEl.textContent = 'Playing…';
-  }
+  // mulai timer HANYA saat langkah efektif pertama
+  if (!st.timer && !st.startedAt && st.moves === 0){
+    startTimer();
+    statusEl.textContent = 'Playing…';
+  }
 
-  st.moves++;
-  movesEl.textContent = st.moves;
-  draw();
+  st.moves++;
+  movesEl.textContent = st.moves;
+  draw();
 
-  if (isSolved()){
-    onWin();
-  }
+  if (isSolved()){
+    onWin();
+  }
 }
 
 
 /* ========= Leaderboard (API vercel) ========= */
 async function saveScoreToServer(name, ms, moves){
-  const res = await fetch('/api/leaderboard', {
-    method:'POST',
-    headers:{'content-type':'application/json'},
-    body: JSON.stringify({ name, time: ms, moves })
-  });
-  if (!res.ok) throw new Error('submit failed');
-  return res.json();
+  const res = await fetch('/api/leaderboard', {
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body: JSON.stringify({ name, time: ms, moves })
+  });
+  if (!res.ok) throw new Error('submit failed');
+  return res.json();
 }
 
 async function fetchLeaderboard(){
-  try{
-    const res = await fetch('/api/leaderboard');
-    if(!res.ok) throw new Error('GET failed');
-    return await res.json(); // [{name,time,moves}, ...]
-  }catch{
-    // fallback baca localStorage jika perlu
-    return JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
-  }
+  try{
+    const res = await fetch('/api/leaderboard');
+    if(!res.ok) throw new Error('GET failed');
+    return await res.json(); // [{name,time,moves}, ...]
+  }catch{
+    // fallback baca localStorage jika perlu
+    return JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
+  }
 }
 
 async function renderLeaderboard(){
-  const el = document.getElementById('leaderboard');
-  if(!el) return;
-  el.innerHTML = '';
-  const data = await fetchLeaderboard();
-  (data||[]).forEach((e,i)=>{
-    const row = document.createElement('div');
-    row.className = 'leader';
-    row.innerHTML = `<span>${i===0?'👑 ':''}${i+1}. ${e.name||'Anon'}</span>
-                     <span>${fmt(Number(e.time||0))} • ${Number(e.moves||0)} mv</span>`;
-    el.appendChild(row);
-  });
-  if (!data || data.length===0){
-    el.innerHTML = '<div class="muted">Belum ada skor</div>';
-  }
+  const el = document.getElementById('leaderboard');
+  if(!el) return;
+  el.innerHTML = '';
+  const data = await fetchLeaderboard();
+  (data||[]).forEach((e,i)=>{
+    const row = document.createElement('div');
+    row.className = 'leader';
+    row.innerHTML = `<span>${i===0?'👑 ':''}${i+1}. ${e.name||'Anon'}</span>
+                     <span>${fmt(Number(e.time||0))} • ${Number(e.moves||0)} mv</span>`;
+    el.appendChild(row);
+  });
+  if (!data || data.length===0){
+    el.innerHTML = '<div class="muted">Belum ada skor</div>';
+  }
 }
 
 /* ===== Win FX (confetti simple + glow) ===== */
 function confettiBurst(){
-  fxctx.clearRect(0,0,fx.width,fx.height);
-  const particles = [];
-  const N = 120;
-  for (let i=0;i<N;i++){
-    particles.push({
-      x: fx.width/2, y: fx.height/2,
-      vx: (Math.random()*2-1)*4,
-      vy: (Math.random()*2-1)*4 - 2,
-      g: 0.08 + Math.random()*0.06,
-      life: 60 + Math.random()*20,
-      size: 2 + Math.random()*3
-    });
-  }
-  let t=0;
-  function tick(){
-    fxctx.clearRect(0,0,fx.width,fx.height);
-    particles.forEach(p=>{
-      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life--;
-      fxctx.globalAlpha = Math.max(0, p.life/80);
-      fxctx.fillStyle = ['#ff1e00','#ffd166','#66ef9a','#66a0ff','#ffffff'][Math.floor(Math.random()*5)];
-      fxctx.beginPath(); fxctx.arc(p.x,p.y,p.size,0,Math.PI*2); fxctx.fill();
-    });
-    fxctx.globalAlpha = 1;
-    t++;
-    if (t<90) requestAnimationFrame(tick);
-    else fxctx.clearRect(0,0,fx.width,fx.height);
-  }
-  tick();
-  // glow anim on wrapper
-  wrap.classList.remove('win-glow'); // restart animation
-  void wrap.offsetWidth;
-  wrap.classList.add('win-glow');
+  fxctx.clearRect(0,0,fx.width,fx.height);
+  const particles = [];
+  const N = 120;
+  for (let i=0;i<N;i++){
+    particles.push({
+      x: fx.width/2, y: fx.height/2,
+      vx: (Math.random()*2-1)*4,
+      vy: (Math.random()*2-1)*4 - 2,
+      g: 0.08 + Math.random()*0.06,
+      life: 60 + Math.random()*20,
+      size: 2 + Math.random()*3
+    });
+  }
+  let t=0;
+  function tick(){
+    fxctx.clearRect(0,0,fx.width,fx.height);
+    particles.forEach(p=>{
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life--;
+      fxctx.globalAlpha = Math.max(0, p.life/80);
+      fxctx.fillStyle = ['#ff1e00','#ffd166','#66ef9a','#66a0ff','#ffffff'][Math.floor(Math.random()*5)];
+      fxctx.beginPath(); fxctx.arc(p.x,p.y,p.size,0,Math.PI*2); fxctx.fill();
+    });
+    fxctx.globalAlpha = 1;
+    t++;
+    if (t<90) requestAnimationFrame(tick);
+    else fxctx.clearRect(0,0,fx.width,fx.height);
+  }
+  tick();
+  // glow anim on wrapper
+  wrap.classList.remove('win-glow'); // restart animation
+  void wrap.offsetWidth;
+  wrap.classList.add('win-glow');
 }
 
 /* ====== SHARE CARD + SHARE ON X ====== */
 function blobToFile(blob, name) {
-  return new File([blob], name, { type: blob.type });
+  return new File([blob], name, { type: blob.type });
 }
 
 function loadExtImage(url) {
-  return new Promise(resolve => {
-    const im = new Image();
-    im.crossOrigin = 'anonymous';
-    im.onload = () => resolve(im);
-    im.onerror = () => resolve(null);
-    im.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
-  });
+  return new Promise(resolve => {
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(null);
+    im.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
+  });
 }
 
 async function createShareCard(username, bestMs, moves) {
-  const w = 1200, h = 630;
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  const g = c.getContext('2d');
+  const w = 1200, h = 630;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
 
-  // background gradasi
-  const grd = g.createLinearGradient(0, 0, w, h);
-  grd.addColorStop(0, '#11131a');
-  grd.addColorStop(1, '#1a0f0f');
-  g.fillStyle = grd;
-  g.fillRect(0, 0, w, h);
+  // background gradasi
+  const grd = g.createLinearGradient(0, 0, w, h);
+  grd.addColorStop(0, '#11131a');
+  grd.addColorStop(1, '#1a0f0f');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, w, h);
 
-  // blob dekorasi
-  g.globalAlpha = 0.22;
-  g.fillStyle = '#ff1e00';
-  g.beginPath(); g.arc(w * 0.85, h * 0.22, 160, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#ffffff';
-  g.beginPath(); g.arc(w * 0.18, h * 0.82, 220, 0, Math.PI * 2); g.fill();
-  g.globalAlpha = 1;
+  // blob dekorasi
+  g.globalAlpha = 0.22;
+  g.fillStyle = '#ff1e00';
+  g.beginPath(); g.arc(w * 0.85, h * 0.22, 160, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#ffffff';
+  g.beginPath(); g.arc(w * 0.18, h * 0.82, 220, 0, Math.PI * 2); g.fill();
+  g.globalAlpha = 1;
 
-  // logo RedStone
-  try {
-    const logo = await loadExtImage('/images/redstonelogox.png');
-    if (logo) g.drawImage(logo, w - 300, 40, 300, 300);
-  } catch {}
+  // logo RedStone
+  try {
+    const logo = await loadExtImage('/images/redstonelogox.png');
+    if (logo) g.drawImage(logo, w - 300, 40, 300, 300);
+  } catch {}
 
-  // teks
-  g.fillStyle = '#fff';
-  g.font = '800 64px system-ui';
-  g.fillText('RedStone Puzzle Game', 60, 120);
+  // teks
+  g.fillStyle = '#fff';
+  g.font = '800 64px system-ui';
+  g.fillText('RedStone Puzzle Game', 60, 120);
 
-  g.font = '600 42px system-ui';
-  g.fillStyle = '#cfd3da';
-  g.fillText('Player', 60, 200);
-  g.fillStyle = '#ffffff';
-  g.font = '800 56px system-ui';
-  g.fillText(username || 'Anon', 60, 258);
+  g.font = '600 42px system-ui';
+  g.fillStyle = '#cfd3da';
+  g.fillText('Player', 60, 200);
+  g.fillStyle = '#ffffff';
+  g.font = '800 56px system-ui';
+  g.fillText(username || 'Anon', 60, 258);
 
-  g.fillStyle = '#cfd3da';
-  g.font = '600 42px system-ui';
-  g.fillText('Best Time', 60, 340);
-  g.fillStyle = '#66ef9a';
-  g.font = '800 88px system-ui';
-  g.fillText(fmt(bestMs), 60, 410);
+  g.fillStyle = '#cfd3da';
+  g.font = '600 42px system-ui';
+  g.fillText('Best Time', 60, 340);
+  g.fillStyle = '#66ef9a';
+  g.font = '800 88px system-ui';
+  g.fillText(fmt(bestMs), 60, 410);
 
-  g.fillStyle = '#cfd3da';
-  g.font = '600 42px system-ui';
-  g.fillText('Moves', 60, 490);
-  g.fillStyle = '#66a0ff';
-  g.font = '800 88px system-ui';
-  g.fillText(String(moves), 60, 560);
+  g.fillStyle = '#cfd3da';
+  g.font = '600 42px system-ui';
+  g.fillText('Moves', 60, 490);
+  g.fillStyle = '#66a0ff';
+  g.font = '800 88px system-ui';
+  g.fillText(String(moves), 60, 560);
 
-  return new Promise(resolve => c.toBlob(b => resolve(b), 'image/png'));
+  return new Promise(resolve => c.toBlob(b => resolve(b), 'image/png'));
 }
 
 async function shareOnX(username) {
-  const name = username || 'Anon';
-  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
-  const my = board.find(e => e.name === name) || { time: 0, moves: 0 };
-  const rank = Math.max(1, board.findIndex(e => e.name === name) + 1);
+  const name = username || 'Anon';
+  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
+  const my = board.find(e => e.name === name) || { time: 0, moves: 0 };
+  const rank = Math.max(1, board.findIndex(e => e.name === name) + 1);
 
-  const cardBlob = await createShareCard(name, my.time || 0, my.moves || 0);
-  const file = blobToFile(cardBlob, 'puzzle-score.png');
+  const cardBlob = await createShareCard(name, my.time || 0, my.moves || 0);
+  const file = blobToFile(cardBlob, 'puzzle-score.png');
 
-  const caption =
-    
-    `👑 ${name} just solved RedStone Puzzle!\n` +
-    `Rank #${rank} • ⏳ ${fmt(my.time || 0)} • 🧩 ${my.moves || 0} moves\n` +
-    `Can you beat this?`+
-  ' @redstone_defi ' ;
+  const caption =
+    
+    `👑 ${name} just solved RedStone Puzzle!\n` +
+    `Rank #${rank} • ⏳ ${fmt(my.time || 0)} • 🧩 ${my.moves || 0} moves\n` +
+    `Can you beat this?`+
+  ' @redstone_defi ' ;
 
-  try {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        title: 'RedStone Puzzle Game',
-        text: caption,
-        files: [file],
-        url: location.origin
-      });
-      return;
-    }
-  } catch (e) {}
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: 'RedStone Puzzle Game',
+        text: caption,
+        files: [file],
+        url: location.origin
+      });
+      return;
+    }
+  } catch (e) {}
 
-  // fallback ke tweet intent
-  const shareUrl =
-    `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('RedStone')}`;
-  window.open(shareUrl, '_blank', 'noopener,noreferrer');
+  // fallback ke tweet intent
+  const shareUrl =
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(location.origin)}&hashtags=${encodeURIComponent('RedStone')}`;
+  window.open(shareUrl, '_blank', 'noopener,noreferrer');
 }
 
 /* ==== Optional: tombol untuk cek preview card ==== */
 async function previewShareCard(){
-  const name = st.username || 'Anon';
-  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
-  const my = board.find(e => e.name === name) || { time: 0, moves: 0 };
-  const blob = await createShareCard(name, my.time || 0, my.moves || 0);
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
+  const name = st.username || 'Anon';
+  const board = JSON.parse(localStorage.getItem('ps_leaderboard') || '[]');
+  const my = board.find(e => e.name === name) || { time: 0, moves: 0 };
+  const blob = await createShareCard(name, my.time || 0, my.moves || 0);
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
 }
 
-
-/* --- FUNGSI BARU: Pilih Gambar Acak --- */
-function getRandomImageName() {
-    // Ambil semua opsi gambar dari elemen <select>
-    const options = Array.from(imageSelect.options);
-    
-    // Pilih indeks acak, hindari yang terpilih saat ini jika memungkinkan
-    let randomIndex;
-    do {
-        randomIndex = Math.floor(Math.random() * options.length);
-    } while (options.length > 1 && options[randomIndex].value === imageSelect.value);
-
-    // Set nilai <select> ke gambar acak yang baru
-    imageSelect.value = options[randomIndex].value;
-    
-    return imageSelect.value;
-}
-/* -------------------------------------- */
 
 
 /* ===== Events ===== */
 saveNameBtn.onclick = ()=>{
-  const v = usernameInput.value.trim();
-  st.username = v || 'Anon';
-  localStorage.setItem('ps_username', st.username);
-  playerLabel.textContent = st.username;
+  const v = usernameInput.value.trim();
+  st.username = v || 'Anon';
+  localStorage.setItem('ps_username', st.username);
+  playerLabel.textContent = st.username;
 };
 
 
-/* --- MODIFIKASI EVENT LISTENER TOMBOL LOAD (reloadBtn) --- */
-reloadBtn.addEventListener('click', async ()=>{
-  // 1. Pilih gambar acak
-  const randomImageName = getRandomImageName();
-  
-  // 2. Muat gambar
-  const loaded = await loadImage(randomImageName);
-  if (!loaded){ alert('Image not found: '+randomImageName); return; }
-  img = loaded;
-  
-  // 3. Reset board ke kondisi tersusun RAPI (tidak di-shuffle)
-  resetOrderedBoard();
-  
-  // 4. Update status dan label
-  statusEl.textContent = 'Ready to Shuffle'; // Ubah status agar jelas
-  statusEl.classList.remove('ok');
-});
-/* -------------------------------------------------------- */
 
+reloadBtn.addEventListener('click', async ()=>{
+  const loaded = await loadImage(imageSelect.value);
+  if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
+  img = loaded;
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw(); startTimer(); statusEl.textContent='Playing…';
+});
 
 shuffleBtn.addEventListener('click', ()=>{
-  if (!img) return;
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  if (!img) return;
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw(); startTimer(); statusEl.textContent='Playing…';
 });
 
 newBtn.addEventListener('click', async ()=>{
-  if (!img){
-    img = await loadImage(imageSelect.value);
-    if (!img){ alert('Image not found: '+imageSelect.value); return; }
-  }
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  if (!img){
+    img = await loadImage(imageSelect.value);
+    if (!img){ alert('Image not found: '+imageSelect.value); return; }
+  }
+  shuffleSolvable(Math.max(200, st.n*st.n*30));
+  draw(); startTimer(); statusEl.textContent='Playing…';
 });
 
 canvas.addEventListener('click', e=>{
-  if (!img) return;
-  const i = posToIdx(e.clientX, e.clientY);
-  if (i>=0) move(i);
+  if (!img) return;
+  const i = posToIdx(e.clientX, e.clientY);
+  if (i>=0) move(i);
 });
 canvas.addEventListener('touchend', e=>{
-  if (!img) return;
-  const t = e.changedTouches[0];
-  const i = posToIdx(t.clientX, t.clientY);
-  if (i>=0) move(i);
+  if (!img) return;
+  const t = e.changedTouches[0];
+  const i = posToIdx(t.clientX, t.clientY);
+  if (i>=0) move(i);
 },{passive:true});
 window.addEventListener('keydown', e=>{
-  if (!img) return;
-  const n = st.n, eIdx = st.empty;
-  let target = -1;
-  const r = Math.floor(eIdx/n), c = eIdx % n;
-  if (e.key==='ArrowUp' && r<n-1)   target = eIdx + n;
-  if (e.key==='ArrowDown' && r>0)   target = eIdx - n;
-  if (e.key==='ArrowLeft' && c<n-1) target = eIdx + 1;
-  if (e.key==='ArrowRight'&& c>0)   target = eIdx - 1;
-  if (target>=0) move(target);
+  if (!img) return;
+  const n = st.n, eIdx = st.empty;
+  let target = -1;
+  const r = Math.floor(eIdx/n), c = eIdx % n;
+  if (e.key==='ArrowUp' && r<n-1)   target = eIdx + n;
+  if (e.key==='ArrowDown' && r>0)   target = eIdx - n;
+  if (e.key==='ArrowLeft' && c<n-1) target = eIdx + 1;
+  if (e.key==='ArrowRight'&& c>0)   target = eIdx - 1;
+  if (target>=0) move(target);
 });
 
 shareBtn.onclick = () => shareOnX(st.username || 'Anon');
@@ -585,38 +543,38 @@ shareBtn.onclick = () => shareOnX(st.username || 'Anon');
 
 /* ========= WIN HANDLER ========= */
 async function onWin(){
-  stopTimer();
-  statusEl.textContent='Solved!';
-  statusEl.classList.add('ok');
-  confettiBurst();
+  stopTimer();
+  statusEl.textContent='Solved!';
+  statusEl.classList.add('ok');
+  confettiBurst();
 
-  const elapsed = Date.now() - st.startedAt;
-  const name = (st.username || 'Anon').trim() || 'Anon';
+  const elapsed = Date.now() - st.startedAt;
+  const name = (st.username || 'Anon').trim() || 'Anon';
 
-  try{
-    await saveScoreToServer(name, elapsed, st.moves);
-  }catch(e){
-    // fallback local kalau API gagal
-    let board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
-    board.push({ name, time: elapsed, moves: st.moves, date: Date.now() });
-    board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves));
-    board = board.slice(0,10);
-    localStorage.setItem('ps_leaderboard', JSON.stringify(board));
-  }
-  renderLeaderboard();
+  try{
+    await saveScoreToServer(name, elapsed, st.moves);
+  }catch(e){
+    // fallback local kalau API gagal
+    let board = JSON.parse(localStorage.getItem('ps_leaderboard')||'[]');
+    board.push({ name, time: elapsed, moves: st.moves, date: Date.now() });
+    board.sort((a,b)=> (a.time - b.time) || (a.moves - b.moves));
+    board = board.slice(0,10);
+    localStorage.setItem('ps_leaderboard', JSON.stringify(board));
+  }
+  renderLeaderboard();
 }
 
 /* ========= INIT ========= */
 (async function init(){
-  // load default image, tapi JANGAN shuffle
-  const loaded = await loadImage(imageSelect.value);
-  if (loaded){
-    img = loaded;
-    resetOrderedBoard();
-  } else {
-    statusEl.textContent = 'Select image & Load';
-  }
-  await renderLeaderboard();
+  // load default image, tapi JANGAN shuffle
+  const loaded = await loadImage(imageSelect.value);
+  if (loaded){
+    img = loaded;
+    resetOrderedBoard();
+  } else {
+    statusEl.textContent = 'Select image & Load';
+  }
+  await renderLeaderboard();
 })();
 </script>
 </body>
