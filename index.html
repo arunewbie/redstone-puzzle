@@ -491,12 +491,17 @@ saveNameBtn.onclick = ()=>{
 
 
 
+/* === Tombol Load === */
 reloadBtn.addEventListener('click', async ()=>{
-  const loaded = await loadImage(imageSelect.value);
-  if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
+  const selected = imageSelect.value;
+  const loaded = await loadImage(selected);
+  if (!loaded){
+    alert('Image not found: ' + selected);
+    return;
+  }
   img = loaded;
-  shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  resetOrderedBoard();   // gambar langsung tampil urut rapi
+  statusEl.textContent = 'Ready';
 });
 
 shuffleBtn.addEventListener('click', ()=>{
@@ -564,6 +569,22 @@ async function onWin(){
   renderLeaderboard();
 }
 
+
+function resetOrderedBoard(){
+  const n = st.n, N = n*n;
+  st.tiles = Array.from({length:N}, (_,i)=>i);
+  st.empty = N-1;
+  st.moves = 0;
+  movesEl.textContent = '0';
+  timeEl.textContent = '00:00';
+  statusEl.textContent = 'Ready';
+  statusEl.classList.remove('ok');
+  st.startedAt = 0;
+  stopTimer();
+  draw();
+}
+
+  
 /* ========= INIT ========= */
 (async function init(){
   // load default image, tapi JANGAN shuffle
