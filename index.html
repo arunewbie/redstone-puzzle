@@ -169,7 +169,9 @@ const st = {
   timer: null,
   startedAt: 0,
   username: localStorage.getItem('ps_username') || '',
+  locked: true,          // 👈 papan terkunci saat awal/load
 };
+
 
 playerLabel.textContent = st.username || '—';
 if (st.username) usernameInput.value = st.username;
@@ -267,13 +269,13 @@ function canMove(i){
 }
 
 function move(i){
+  if (st.locked) return;                    // 👈 jangan bisa geser kalau terkunci
   if (!canMove(i)) return;
 
-  // lakukan perpindahan dulu
   swap(i, st.empty);
   st.empty = i;
 
-  // mulai timer HANYA saat langkah efektif pertama
+  // mulai timer hanya pada langkah pertama setelah dibuka
   if (!st.timer && !st.startedAt && st.moves === 0){
     startTimer();
     statusEl.textContent = 'Playing…';
@@ -287,6 +289,7 @@ function move(i){
     onWin();
   }
 }
+
 
 
 /* ========= Leaderboard (API vercel) ========= */
@@ -493,21 +496,21 @@ saveNameBtn.onclick = ()=>{
 
 /* === Tombol Load === */
 reloadBtn.addEventListener('click', async ()=>{
-  const selected = imageSelect.value;
-  const loaded = await loadImage(selected);
-  if (!loaded){
-    alert('Image not found: ' + selected);
-    return;
-  }
+  const loaded = await loadImage(imageSelect.value);
+  if (!loaded){ alert('Image not found: '+imageSelect.value); return; }
   img = loaded;
-  resetOrderedBoard();   // gambar langsung tampil urut rapi
-  statusEl.textContent = 'Ready';
+  resetOrderedBoard();                      // 👈 TIDAK shuffle & terkunci
+  // (timer tidak dimulai, papan menunggu tombol Shuffle)
 });
+
 
 shuffleBtn.addEventListener('click', ()=>{
   if (!img) return;
   shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  st.locked = false;                        // 👈 buka kunci setelah shuffle
+  draw();
+  // timer tetap menunggu langkah pertama (logika ada di move())
+  statusEl.textContent='Ready — mulai geser!';
 });
 
 newBtn.addEventListener('click', async ()=>{
@@ -516,22 +519,27 @@ newBtn.addEventListener('click', async ()=>{
     if (!img){ alert('Image not found: '+imageSelect.value); return; }
   }
   shuffleSolvable(Math.max(200, st.n*st.n*30));
-  draw(); startTimer(); statusEl.textContent='Playing…';
+  st.locked = false;                        // 👈 buka kunci juga
+  draw();
+  statusEl.textContent='Ready — mulai geser!';
 });
 
+
 canvas.addEventListener('click', e=>{
-  if (!img) return;
+  if (!img || st.locked) return;            // 👈
   const i = posToIdx(e.clientX, e.clientY);
   if (i>=0) move(i);
 });
+
 canvas.addEventListener('touchend', e=>{
-  if (!img) return;
+  if (!img || st.locked) return;            // 👈
   const t = e.changedTouches[0];
   const i = posToIdx(t.clientX, t.clientY);
   if (i>=0) move(i);
 },{passive:true});
+
 window.addEventListener('keydown', e=>{
-  if (!img) return;
+  if (!img || st.locked) return;            // 👈
   const n = st.n, eIdx = st.empty;
   let target = -1;
   const r = Math.floor(eIdx/n), c = eIdx % n;
@@ -541,6 +549,7 @@ window.addEventListener('keydown', e=>{
   if (e.key==='ArrowRight'&& c>0)   target = eIdx - 1;
   if (target>=0) move(target);
 });
+
 
 shareBtn.onclick = () => shareOnX(st.username || 'Anon');
 
@@ -572,31 +581,33 @@ async function onWin(){
 
 function resetOrderedBoard(){
   const n = st.n, N = n*n;
-  st.tiles = Array.from({length:N}, (_,i)=>i);
+  st.tiles = Array.from({length:N}, (_,i)=>i); // 0..N-1 (terakhir = kosong)
   st.empty = N-1;
   st.moves = 0;
   movesEl.textContent = '0';
-  timeEl.textContent = '00:00';
-  statusEl.textContent = 'Ready';
-  statusEl.classList.remove('ok');
-  st.startedAt = 0;
   stopTimer();
+  st.startedAt = 0;
+  timeEl.textContent = '00:00';
+  st.locked = true;                         // 👈 tetap terkunci
+  statusEl.textContent = 'Ready — tekan Shuffle untuk mulai';
+  statusEl.classList.remove('ok');
   draw();
 }
+
 
   
 /* ========= INIT ========= */
 (async function init(){
-  // load default image, tapi JANGAN shuffle
   const loaded = await loadImage(imageSelect.value);
   if (loaded){
     img = loaded;
-    resetOrderedBoard();
+    resetOrderedBoard();                    // 👈 ordered & locked
   } else {
     statusEl.textContent = 'Select image & Load';
   }
   await renderLeaderboard();
 })();
+
 </script>
 </body>
 </html>
