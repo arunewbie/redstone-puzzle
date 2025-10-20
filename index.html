@@ -96,6 +96,7 @@
           <option value="atom.png">RedStone atom</option>
           <option value="redstonelogo.png">RedStone logo</option>
           <option value="stoney.png">Stoney</option>
+            <option value="clara.png">Clara</option>
           </select>
           <button id="reload" class="secondary">Load</button>
             <button id="previewBtn">Preview</button>
@@ -521,7 +522,7 @@ newBtn.addEventListener('click', async ()=>{
   shuffleSolvable(Math.max(200, st.n*st.n*30));
   st.locked = false;                        // 👈 buka kunci juga
   draw();
-  statusEl.textContent='Ready — mulai geser!';
+  statusEl.textContent='Ready — start sliding!';
 });
 
 
@@ -589,7 +590,7 @@ function resetOrderedBoard(){
   st.startedAt = 0;
   timeEl.textContent = '00:00';
   st.locked = true;                         // 👈 tetap terkunci
-  statusEl.textContent = 'Ready — tekan Shuffle untuk mulai';
+  statusEl.textContent = 'Ready — Press Shuffle to start';
   statusEl.classList.remove('ok');
   draw();
 }
